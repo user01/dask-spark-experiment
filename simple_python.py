@@ -5,6 +5,10 @@ import thelib
 import numpy as np
 import pandas as pd
 
+np.random.RandomState(451).randn(50000, 300).mean()
+import time
+time.time()
+
 from dask.distributed import Client
 from functools import partial
 
@@ -26,6 +30,9 @@ futures = client.map(lambda idx: the_work(idx + 1, future_common_data), range(co
 print(client.gather(futures))
 
 
+from IPython.lib import passwd
+password = passwd("batman123")
+password
 
 # Need:
 # python code to unload library if loaded
