@@ -13,15 +13,18 @@ spark-notebook:
 
 
 dask-build:
-	docker build -t dask2.7example:v0.4 -f Dockerfile .
+	docker build -t dask3.6example:v0.2 -f Dockerfile .
 
 dask-master:
-	docker run --rm -it -p 8786:8786 -p 8787:8787 dask2.7example:v0.4 dask-scheduler
+	docker run --rm -it -p 8786:8786 -p 8787:8787 dask3.6example:v0.2 dask-scheduler
 
-IP := $(shell ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1')
+IP := $(shell ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n1)
 dask-worker:
 	# echo $(IP)
-	docker run --rm -it dask2.7example:v0.4 dask-worker $(IP):8786 --nthreads 2 --memory-limit 0.25
+	docker run --rm -it dask3.6example:v0.2 dask-worker $(IP):8786 --nthreads 1 --memory-limit 0.2
 
 dask-notebook:
-	docker run --rm -it -p 8888:8888 dask2.7example:v0.4 jupyter notebook --ip=0.0.0.0 --allow-root
+	docker run --rm -it -p 8888:8888 -v $PWD/data/:/dask-tutorial/data/ dask3.6example:v0.2 jupyter notebook --ip=0.0.0.0 --allow-root  --NotebookApp.token=''
+
+dask-prep:
+	docker run --rm -it -p 8888:8888 -v $PWD/data/:/dask-tutorial/data/ dask3.6example:v0.2 python prep.py
