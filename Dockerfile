@@ -17,6 +17,7 @@ RUN apt update && \
               fastparquet \
               scikit-image \
               graphviz \
+              s3fs \
               scikit-learn==0.18.1 \
               bokeh==0.12.16 && \
   git clone http://github.com/dask/dask-tutorial /dask-tutorial && \
