@@ -69,7 +69,7 @@ RUN curl -sL --retry 3 \
  && mv /usr/$SPARK_PACKAGE $SPARK_HOME \
  && chown -R root:root $SPARK_HOME
 
-RUN echo 'export PATH="$HOME/anaconda/bin:$PATH"' >> ~/.bashrc
+ENV PATH $PATH:/root/anaconda/bin
 
 WORKDIR $SPARK_HOME
 CMD ["bin/spark-class", "org.apache.spark.deploy.master.Master"]
