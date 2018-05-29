@@ -30,3 +30,19 @@ dask-notebook:
 
 dask-prep:
 	docker run --rm -it -p 8888:8888 -v $(PWD)/data/:/dask-tutorial/data/ dask3.6example:v0.3 python prep.py
+
+
+minikube:
+	-minikube delete
+	minikube start --memory 4096 --cpus 4
+	# minikube start --memory 4096 --cpus 4  --extra-config kubelet.EnableCustomMetrics=true
+	sleep 10
+	helm init
+	sleep 60
+	# minikube addons enable heapster
+	minikube addons enable metrics-server
+	helm repo add coreos https://s3-eu-west-1.amazonaws.com/coreos-charts/stable/
+	helm install coreos/prometheus-operator --name prometheus-operator --namespace monitoring
+	helm install coreos/kube-prometheus --name kube-prometheus --set global.rbacEnable=true --namespace monitoring
+	# kubectl port-forward -n monitoring prometheus-kube-prometheus-0 9090
+	# kubectl port-forward $(kubectl get  pods --selector=app=kube-prometheus-grafana -n  monitoring --output=jsonpath="{.items..metadata.name}") -n monitoring  3000
