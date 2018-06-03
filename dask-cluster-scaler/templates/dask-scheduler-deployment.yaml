@@ -35,10 +35,23 @@ spec:
             - "{{ .Values.scheduler.servicePort }}"
             - --bokeh-port
             - "8787"
+            - --preload
+            - /adaptive_scheduler.py
           ports:
             - containerPort: 8786
             - containerPort: 8787
           resources:
 {{ toYaml .Values.scheduler.resources | indent 12 }}
           env:
-{{ toYaml .Values.scheduler.env | indent 12 }}
+            - name: NAMESPACE
+              value: {{ .Values.namespace }}
+            - name: WORKER_LABELS
+              value: app={{ template "dask.name" . }},component=worker
+            - name: WORKER_IMAGE
+              value: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+            - name: WORKER_IMAGE_PULL_POLICY
+              value: {{ .Values.image.pullPolicy }}
+            - name: WORKER_RESOURCES
+              value: {{ toJson .Values.worker.resources | quote }}
+            - name: WORKER_ARGS
+              value: dask-worker,{{ template "dask.fullname" . }}-scheduler:{{ .Values.scheduler.servicePort }},--nthreads,{{ .Values.worker.resources.limits.cpu | quote }},--memory-limit,{{ .Values.worker.resources.limits.memory | quote }},--no-bokeh,'--host','$(POD_IP)','--name','$(POD_NAME)'

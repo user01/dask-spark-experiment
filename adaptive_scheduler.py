@@ -35,21 +35,18 @@ class KubeCluster(object):
         client.configuration.assert_hostname = False
         self.api = client.CoreV1Api()
         # Read the environment variables for configuration
-        self.namespace = os.environ.get('NAMESPACE', 'dask')
-        self.worker_labels = os.environ.get(
-            'WORKER_LABELS', 'app=dask,component=worker')
-        dask_scheduler_service = os.environ.get(
-            'DASK_SCHEDULER_SERVICE', 'dask-scheduler')
-        worker_name_prefix = os.environ.get(
-            'WORKER_NAME_PREFIX', 'dask-worker-')
-        worker_image = os.environ.get('WORKER_IMAGE', 'daskdev/dask:latest')
-        worker_image_pull_policy = os.environ.get(
-            'WORKER_IMAGE_PULL_POLICY', '')
+        self.namespace = os.environ.get('NAMESPACE')
+        self.worker_labels = os.environ.get('WORKER_LABELS')
+        dask_scheduler_service = os.environ.get('DASK_SCHEDULER_SERVICE')
+        worker_name_prefix = os.environ.get('WORKER_NAME_PREFIX')
+        worker_image = os.environ.get('WORKER_IMAGE')
+        worker_image_pull_policy = os.environ.get('WORKER_IMAGE_PULL_POLICY')
         # Worker resources should be given as a JSON string, e.g.
         # "{'requests': {'cpu':'100m','memory':'1Gi'}}"
         # We need them as a dict
-        worker_resources = json.loads(
-            os.environ.get('WORKER_RESOURCES', '\{\}'))
+        worker_resources = json.loads(os.environ.get('WORKER_RESOURCES'))
+        worker_args = os.environ.get('WORKER_ARGS').split(',')
+
         # Build the pod template once for use later
         # Note that because we use generate_name rather than name, this is reusable
         self.pod_template = client.V1Pod(
@@ -89,14 +86,7 @@ class KubeCluster(object):
                                 )
                             ),
                         ],
-                        args=[
-                            'dask-worker',
-                            dask_scheduler_service,
-                            '--nprocs', '1',
-                            '--nthreads', '1',
-                            '--host', '$(POD_IP)',
-                            '--name', '$(POD_NAME)',
-                        ]
+                        args=worker_args
                     )
                 ]
             )
@@ -121,7 +111,7 @@ class KubeCluster(object):
                 'Error fetching existing pods. No scaling attempted.')
             return
         self.log.info('Scaling worker pods from %s to %s', len(pods.items), n)
-        for _ in xrange(n - len(pods.items)):
+        for _ in range(n - len(pods.items)):
             # Create the pod
             try:
                 created = self.api.create_namespaced_pod(
@@ -178,4 +168,5 @@ def dask_setup(scheduler):
     Configures the dask scheduler to use the adaptive implementation.
     """
     cluster = KubeCluster()
-    adapative_cluster = distributed.deploy.Adaptive(scheduler, cluster)
+    adaptive_cluster = distributed.deploy.Adaptive(scheduler, cluster)
+    return adaptive_cluster

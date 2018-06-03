@@ -2,8 +2,8 @@
 namespace: default
 
 image:
-  repository: "user01e/dask3.6example"
-  tag: "v0.3"
+  repository: "user01e/dask"
+  tag: "0.1"
   pullPolicy: IfNotPresent
 
 
@@ -12,13 +12,13 @@ scheduler:
   replicas: 1
   serviceType: "LoadBalancer"
   servicePort: 8786
-  resources: {}
-    # limits:
-    #   cpu: 1.8
-    #   memory: 6G
-    # requests:
-    #   cpu: 1.8
-    #   memory: 6G
+  resources:
+    limits:
+      cpu: 1.8
+      memory: 6G
+    requests:
+      cpu: 1
+      memory: 1G
 
 webUI:
   name: webui
@@ -26,16 +26,8 @@ webUI:
 
 worker:
   name: worker
-  replicas: 1
-  minreplicas: 1
-  maxreplicas: 3
-  targetCPUUtilizationPercentage: 20
+  replicas: 0
   aptPackages: >-
-  env:
-    # - name: EXTRA_CONDA_PACKAGES
-    #   value: numba xarray -c conda-forge
-    # - name: EXTRA_PIP_PACKAGES
-    #   value: s3fs dask-ml --upgrade
   resources:
     limits:
       cpu: 1
@@ -51,15 +43,10 @@ jupyter:
   serviceType: "LoadBalancer"
   servicePort: 443
   password: 'sha1:aae8550c0a44:9507d45e087d5ee481a5ce9f4f16f37a0867318c'  # 'dask'
-  env:
-    # - name: EXTRA_CONDA_PACKAGES
-    #   value: numba xarray -c conda-forge
-    # - name: EXTRA_PIP_PACKAGES
-    #   value: s3fs dask-ml --upgrade
-  resources: {}
-    # limits:
-    #   cpu: 2
-    #   memory: 6G
-    # requests:
-    #   cpu: 2
-    #   memory: 6G
+  resources:
+    limits:
+      cpu: 2
+      memory: 3G
+    requests:
+      cpu: 1
+      memory: 1G

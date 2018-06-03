@@ -23,7 +23,10 @@ RUN conda install -y \
 RUN jupyter labextension install \
       @jupyter-widgets/jupyterlab-manager
 
+RUN mkdir -p /notebooks
+WORKDIR /notebooks
 
+COPY adaptive_scheduler.py /adaptive_scheduler.py
 # openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout mycert.pem -out mycert.pem  -subj "/C=US/ST= /L= /O=Jupyter/OU=Data Science/CN=example.com"
 
 EXPOSE 8786
