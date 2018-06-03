@@ -1,3 +1,12 @@
+import dask.array as da
+from dask.distributed import Client
+client = Client()
+client
+
+x = da.random.normal(0, 1, size=(100000,100000), chunks=(1000, 1000))
+fut = client.compute(x.mean())
+fut
+
 from __future__ import print_function
 
 import thelib

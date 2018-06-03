@@ -1,14 +1,14 @@
-# nameOverride: dask
-# fullnameOverride: dask
 
 namespace: default
 
+image:
+  repository: "user01e/dask3.6example"
+  tag: "v0.3"
+  pullPolicy: IfNotPresent
+
+
 scheduler:
   name: scheduler
-  image:
-    repository: "daskdev/dask"
-    tag: "0.17.4"
-    pullPolicy: IfNotPresent
   replicas: 1
   serviceType: "LoadBalancer"
   servicePort: 8786
@@ -26,10 +26,6 @@ webUI:
 
 worker:
   name: worker
-  image:
-    repository: "daskdev/dask"
-    tag: "0.17.4"
-    pullPolicy: IfNotPresent
   replicas: 1
   minreplicas: 1
   maxreplicas: 3
@@ -51,13 +47,9 @@ worker:
 jupyter:
   name: jupyter
   enabled: true
-  image:
-    repository: "daskdev/dask-notebook"
-    tag: "0.17.4"
-    pullPolicy: IfNotPresent
   replicas: 1
   serviceType: "LoadBalancer"
-  servicePort: 80
+  servicePort: 443
   password: 'sha1:aae8550c0a44:9507d45e087d5ee481a5ce9f4f16f37a0867318c'  # 'dask'
   env:
     # - name: EXTRA_CONDA_PACKAGES

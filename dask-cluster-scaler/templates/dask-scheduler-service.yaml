@@ -10,6 +10,8 @@ metadata:
     component: scheduler
     namespace: {{ .Values.namespace }}
 spec:
+  serviceAccountName: {{ template "dask.fullname" . }}-autoscaler
+  automountServiceAccountToken: true
   ports:
     - name: {{ template "dask.fullname" . }}-scheduler
       port: {{ .Values.scheduler.servicePort }}
@@ -22,3 +24,34 @@ spec:
     release: {{ .Release.Name | quote }}
     component: scheduler
   type: {{ .Values.scheduler.serviceType }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ template "dask.fullname" . }}-autoscaler
+  namespace: {{ .Values.namespace }}
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  namespace: {{ .Values.namespace }}
+  name: {{ template "dask.fullname" . }}-autoscaler
+rules:
+- apiGroups: [""]
+  resources: ["deployment"]
+  resourceNames: ["{{ template "dask.fullname" . }}-worker"]
+  verbs: ["update", "get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: {{ template "dask.fullname" . }}-autoscaler
+  namespace: {{ .Values.namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ template "dask.fullname" . }}-autoscaler
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "dask.fullname" . }}-autoscaler
+    namespace: {{ .Values.namespace }}
