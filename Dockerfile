@@ -1,4 +1,3 @@
-# FROM python:3.6.5-slim-stretch
 FROM continuumio/anaconda3:5.1.0
 
 RUN apt-get update \
@@ -20,8 +19,9 @@ RUN conda install -y \
       scikit-learn==0.19.1 \
       bokeh==0.12.16
 
-RUN jupyter labextension install \
-      @jupyter-widgets/jupyterlab-manager
+RUN conda install -y -c anaconda nodejs && \
+      jupyter labextension install \
+            @jupyter-widgets/jupyterlab-manager
 
 RUN mkdir -p /notebooks
 WORKDIR /notebooks

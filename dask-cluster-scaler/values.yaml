@@ -26,7 +26,8 @@ webUI:
 
 worker:
   name: worker
-  replicas: 0
+  minimum: 0
+  maximum: 3
   aptPackages: >-
   resources:
     limits:

@@ -45,6 +45,10 @@ spec:
           env:
             - name: NAMESPACE
               value: {{ .Values.namespace }}
+            - name: WORKER_MINIMUM
+              value: {{ .Values.worker.minimum }}
+            - name: WORKER_MAXIMUM
+              value: {{ .Values.worker.maximum }}
             - name: WORKER_LABELS
               value: app={{ template "dask.name" . }},component=worker
             - name: WORKER_IMAGE

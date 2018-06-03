@@ -168,5 +168,26 @@ def dask_setup(scheduler):
     Configures the dask scheduler to use the adaptive implementation.
     """
     cluster = KubeCluster()
-    adaptive_cluster = distributed.deploy.Adaptive(scheduler, cluster)
+
+    #     startup_cost : timedelta or str, default "1s"
+    #         Estimate of the number of seconds for nnFactor representing how costly it is to start an additional worker.
+    #         Affects quickly to adapt to high tasks per worker loads
+    #     interval : timedelta or str, default "1000 ms"
+    #         Milliseconds between checks
+    #     wait_count: int, default 3
+    #         Number of consecutive times that a worker should be suggested for
+    #         removal before we remove it.
+    #     scale_factor : int, default 2
+    #         Factor to scale by when it's determined additional workers are needed
+    #     target_duration: timedelta or str, default "5s"
+    #         Amount of time we want a computation to take.
+    #         This affects how aggressively we scale up.
+    #     minimum: int
+    #         Minimum number of workers to keep around
+    #     maximum: int
+    #         Maximum number of workers to keep around
+    minimum = int(os.environ.get('WORKER_MINIMUM', '0'))
+    maximum = int(os.environ.get('WORKER_MAXIMUM', '3'))
+    adaptive_cluster = distributed.deploy.Adaptive(
+        scheduler, cluster, minimum=minimum, maximum=maximum)
     return adaptive_cluster
