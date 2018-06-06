@@ -10,7 +10,7 @@ BSD-3
 import logging
 import os
 import json
-import urlparse
+import urllib.parse
 
 import distributed.deploy
 from kubernetes import client, config
@@ -137,7 +137,7 @@ class KubeCluster(object):
         # Work out pods that we are going to delete
         # Each worker to delete is given in the form "tcp://<worker ip>:<port>"
         # Convert this to a set of IPs
-        ips = set(urlparse.urlparse(worker).hostname for worker in workers)
+        ips = set(urllib.parse.urlparse(worker).hostname for worker in workers)
         to_delete = set(
             p for p in pods.items
             # Every time we run, purge any completed pods as well as the specified ones

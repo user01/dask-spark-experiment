@@ -16,20 +16,20 @@ spark-notebook:
 
 # http://localhost:8787/status
 dask-build:
-	docker build -t user01e/dask:0.1 -f Dockerfile .
+	docker build -t user01e/dask:0.3 -f Dockerfile .
 
 dask-master:
-	docker run --rm -it -p 8786:8786 -p 8787:8787 user01e/dask:0.1 dask-scheduler
+	docker run --rm -it -p 8786:8786 -p 8787:8787 user01e/dask:0.3 dask-scheduler
 
 dask-worker:
 	# echo $(IP)
-	docker run --rm -it user01e/dask:0.1 dask-worker $(IP):8786 --nthreads 1 --memory-limit 0.2
+	docker run --rm -it user01e/dask:0.3 dask-worker $(IP):8786 --nthreads 1 --memory-limit 0.2
 
 dask-notebook:
-	docker run --rm -it -p 8888:8888 -v $(PWD)/data/:/dask-tutorial/data/ user01e/dask:0.1 jupyter lab --ip=0.0.0.0 --allow-root  --NotebookApp.token=''
+	docker run --rm -it -p 8888:8888 -v $(PWD)/data/:/dask-tutorial/data/ user01e/dask:0.3 jupyter lab --ip=0.0.0.0 --allow-root  --NotebookApp.token=''
 
 dask-prep:
-	docker run --rm -it -p 8888:8888 -v $(PWD)/data/:/dask-tutorial/data/ user01e/dask:0.1 python prep.py
+	docker run --rm -it -p 8888:8888 -v $(PWD)/data/:/dask-tutorial/data/ user01e/dask:0.3 python prep.py
 
 
 minikube:

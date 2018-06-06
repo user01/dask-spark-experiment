@@ -5,7 +5,7 @@ To learn more about the release, try:
   $ helm status {{ .Release.Name }}  # information about running pods and this message
   $ helm get {{ .Release.Name }}     # get full Kubernetes specification
 
-This release includes a Dask scheduler, {{ .Values.worker.replicas }} Dask workers, and {{ .Values.jupyter.replicas }} Jupyter servers.  
+This release includes a Dask scheduler, {{ .Values.worker.replicas }} Dask workers, and {{ .Values.jupyter.replicas }} Jupyter servers.
 
 The Jupyter notebook server and Dask scheduler expose external services to
 which you can connect to manage notebooks, or connect directly to the Dask
@@ -20,5 +20,8 @@ cluster.   You can get these addresses by running the following:
 
   NOTE: The default password to login to the notebook server is `dask`.
 
-  NOTE: It may take a few minutes for the LoadBalancer IP to be available, until that the commands below will not work.  
+  NOTE: Inside the cluster (in the notebook), you can access the scheduler at:
+  '{{ template "dask.fullname" . }}-scheduler:{{ .Values.scheduler.servicePort }}'
+
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available, until that the commands below will not work.
   You can watch the status by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "dask.fullname" . }}-jupyter'

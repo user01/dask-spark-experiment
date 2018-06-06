@@ -56,3 +56,9 @@ password
 #  * scatter zipped library into workers
 #  * store zip in known location
 #  *
+
+import itertools
+list(itertools.chain.from_iterable([[1, 2, 3], [4, 5, 6]]))
+list(itertools.chain.from_iterable([[1, 2, 3], [4, 5, 6], [[1], [8,2]]]))
+
+import featuretools as ft

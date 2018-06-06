@@ -7,9 +7,12 @@ RUN apt-get update \
 
 RUN pip install \
       graphviz==0.8.3 \
-      kubernetes==6.0.0 \
       --no-cache-dir \
       --no-dependencies
+
+RUN pip install \
+      kubernetes==6.0.0 \
+      --no-cache-dir
 
 RUN conda install -y \
       dask[complete]=0.17.5 \
@@ -19,9 +22,9 @@ RUN conda install -y \
       scikit-learn==0.19.1 \
       bokeh==0.12.16
 
-RUN conda install -y -c anaconda nodejs && \
-      jupyter labextension install \
-            @jupyter-widgets/jupyterlab-manager
+# RUN conda install -y -c anaconda nodejs && \
+#       jupyter labextension install \
+#             @jupyter-widgets/jupyterlab-manager
 
 RUN mkdir -p /notebooks
 WORKDIR /notebooks

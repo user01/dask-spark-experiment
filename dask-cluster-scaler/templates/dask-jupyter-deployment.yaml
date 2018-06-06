@@ -31,6 +31,11 @@ spec:
         - name: {{ template "dask.fullname" . }}-jupyter
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            -  jupyter
+            -  lab
+            -  --ip=0.0.0.0
+            -  --allow-root
           ports:
             - containerPort: 8888
           resources:
