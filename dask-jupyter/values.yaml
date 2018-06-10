@@ -1,0 +1,26 @@
+namespace: default
+
+image:
+  repository: "user01e/dask"
+  tag: "0.5"
+  pullPolicy: IfNotPresent
+
+
+webUI:
+  name: webui
+  servicePort: 80
+
+jupyter:
+  name: jupyter
+  enabled: true
+  replicas: 1
+  serviceType: "LoadBalancer"
+  servicePort: 443
+  password: 'sha1:aae8550c0a44:9507d45e087d5ee481a5ce9f4f16f37a0867318c'  # 'dask'
+  resources:
+    limits:
+      cpu: 2
+      memory: 1G
+    requests:
+      cpu: 1
+      memory: 512Mi

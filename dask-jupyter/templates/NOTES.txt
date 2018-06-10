@@ -1,0 +1,20 @@
+Thank you for installing {{ .Chart.Name | upper }}, released at name: {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }}  # information about running pods and this message
+  $ helm get {{ .Release.Name }}     # get full Kubernetes specification
+
+This release includes {{ .Values.jupyter.replicas }} Jupyter servers.
+
+The Jupyter notebook server expose external services to
+which you can connect to manage notebooks.
+You can get these addresses by running the following:
+
+  export JUPYTER_NOTEBOOK_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "dask.fullname" . }}-jupyter -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  echo http://$JUPYTER_NOTEBOOK_IP:{{ .Values.jupyter.servicePort }} -- Jupyter notebook
+
+  NOTE: The default password to login to the notebook server is `dask`.
+
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available, until that the commands below will not work.
+  You can watch the status by running 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ template "dask.fullname" . }}-jupyter'
