@@ -1,6 +1,6 @@
 import dask.array as da
 from dask.distributed import Client
-client = Client()
+client = Client('toned-lion-dask-cluster-scaler-scheduler:8786')
 client
 
 x = da.random.normal(0, 1, size=(100000,100000), chunks=(1000, 1000))

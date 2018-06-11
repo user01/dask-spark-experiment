@@ -16,25 +16,25 @@ spark-notebook:
 
 # http://localhost:8787/status
 dask-build:
-	docker build -t user01e/dask:0.3 -f Dockerfile .
+	docker build -t user01e/dask:0.6 -f Dockerfile .
 
 dask-master:
-	docker run --rm -it -p 8786:8786 -p 8787:8787 user01e/dask:0.3 dask-scheduler
+	docker run --rm -it -p 8786:8786 -p 8787:8787 user01e/dask:0.6 dask-scheduler
 
 dask-worker:
 	# echo $(IP)
-	docker run --rm -it user01e/dask:0.3 dask-worker $(IP):8786 --nthreads 1 --memory-limit 0.2
+	docker run --rm -it user01e/dask:0.6 dask-worker $(IP):8786 --nthreads 1 --memory-limit 0.2
 
 dask-notebook:
-	docker run --rm -it -p 8888:8888 -v $(PWD)/data/:/dask-tutorial/data/ user01e/dask:0.3 jupyter lab --ip=0.0.0.0 --allow-root  --NotebookApp.token=''
+	docker run --rm -it -p 8888:8888 -v $(PWD)/data/:/dask-tutorial/data/ user01e/dask:0.6 jupyter lab --ip=0.0.0.0 --allow-root  --NotebookApp.token=''
 
 dask-prep:
-	docker run --rm -it -p 8888:8888 -v $(PWD)/data/:/dask-tutorial/data/ user01e/dask:0.3 python prep.py
+	docker run --rm -it -p 8888:8888 -v $(PWD)/data/:/dask-tutorial/data/ user01e/dask:0.6 python prep.py
 
 
 minikube:
 	-minikube delete
-	minikube start --memory 4096 --cpus 4
+	minikube start --memory 8192 --cpus 6
 	# minikube start --memory 4096 --cpus 4  --extra-config kubelet.EnableCustomMetrics=true
 	sleep 10
 	helm init
@@ -46,3 +46,19 @@ minikube:
 	helm install coreos/kube-prometheus --name kube-prometheus --set global.rbacEnable=true --namespace monitoring
 	# kubectl port-forward -n monitoring prometheus-kube-prometheus-0 9090
 	# kubectl port-forward $(kubectl get  pods --selector=app=kube-prometheus-grafana -n  monitoring --output=jsonpath="{.items..metadata.name}") -n monitoring  3000
+
+
+# Get token for logging into main dashboard
+# kubectl config view | grep -A10 "name: $(kubectl config current-context)" | awk '$1=="access-token:"{print $2}'
+
+# give ourselves admin access
+# gcloud info | grep Account
+# kubectl create clusterrolebinding local-cluster-admin-binding \
+# >  --clusterrole=cluster-admin \
+# >  --user=erik.langenborg@gmail.com
+
+# give the default the power
+# kubectl create -f cluster_role.yaml
+# kubectl create clusterrolebinding dask-role-something \
+>  --clusterrole=dask-doer  \
+>  --serviceaccount=default:default

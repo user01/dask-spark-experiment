@@ -26,6 +26,7 @@ class KubeCluster(object):
 
     def __init__(self, **kwargs):
         self.log = logging.getLogger("distributed.deploy.adaptive")
+        self.log('Started Cluster')
         # Configure ourselves using environment variables
         if 'KUBECONFIG' in os.environ:
             config.load_kube_config()
@@ -37,7 +38,6 @@ class KubeCluster(object):
         # Read the environment variables for configuration
         self.namespace = os.environ.get('NAMESPACE')
         self.worker_labels = os.environ.get('WORKER_LABELS')
-        dask_scheduler_service = os.environ.get('DASK_SCHEDULER_SERVICE')
         worker_name_prefix = os.environ.get('WORKER_NAME_PREFIX')
         worker_image = os.environ.get('WORKER_IMAGE')
         worker_image_pull_policy = os.environ.get('WORKER_IMAGE_PULL_POLICY')
@@ -46,6 +46,16 @@ class KubeCluster(object):
         # We need them as a dict
         worker_resources = json.loads(os.environ.get('WORKER_RESOURCES'))
         worker_args = os.environ.get('WORKER_ARGS').split(',')
+        self.log(f"""
+            self.namespace {self.namespace}
+            self.worker_labels {self.worker_labels}
+            worker_name_prefix {worker_name_prefix}
+            worker_image {worker_image}
+            worker_image_pull_policy {worker_image_pull_policy}
+            worker_resources {worker_resources}
+            worker_args {worker_args}
+            """
+        )
 
         # Build the pod template once for use later
         # Note that because we use generate_name rather than name, this is reusable

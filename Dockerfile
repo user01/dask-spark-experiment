@@ -22,15 +22,23 @@ RUN conda install -y \
       scikit-learn==0.19.1 \
       bokeh==0.12.16
 
-# RUN conda install -y -c anaconda nodejs && \
-#       jupyter labextension install \
-#             @jupyter-widgets/jupyterlab-manager
+RUN pip install \
+      dask-kubernetes==0.3.0 \
+      --no-cache-dir
+
+RUN conda update -y -n base conda
+
+RUN conda install -y -c conda-forge ipywidgets
+
+RUN conda install -y -c anaconda nodejs
+
+RUN jupyter labextension install \
+            @jupyter-widgets/jupyterlab-manager
+
+COPY start-jupyter.sh /start-jupyter.sh
 
 RUN mkdir -p /notebooks
 WORKDIR /notebooks
-
-COPY adaptive_scheduler.py /adaptive_scheduler.py
-# openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout mycert.pem -out mycert.pem  -subj "/C=US/ST= /L= /O=Jupyter/OU=Data Science/CN=example.com"
 
 EXPOSE 8786
 EXPOSE 8787

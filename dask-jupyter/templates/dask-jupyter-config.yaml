@@ -12,8 +12,7 @@ metadata:
     component: jupyter
     namespace: {{ .Values.namespace }}
 data:
-  jupyter_notebook_config.py: |
-    c = get_config()
-    c.NotebookApp.password = '{{ .Values.jupyter.password }}'
+  password: |
+    {{ .Values.password }}
 
 {{ end }}
