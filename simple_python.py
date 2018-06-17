@@ -3,9 +3,37 @@ from dask.distributed import Client
 client = Client('toned-lion-dask-cluster-scaler-scheduler:8786')
 client
 
-x = da.random.normal(0, 1, size=(100000,100000), chunks=(1000, 1000))
+x = da.random.normal(0, 1, size=(100000, 100000), chunks=(1000, 1000))
 fut = client.compute(x.mean())
 fut
+
+spec = {
+    'metadata': {
+        'owner-job': 'mittens'
+    },
+    'spec': {
+        'containers': [{
+            'args': ['dask-worker',
+                     '--nthreads', '1',
+                     '--death-timeout', '60'],
+            'command': None,
+            'image': 'user01e/dask:0.7',
+            'name': 'dask-worker',
+            'resources': {
+                'limits': {
+                    'cpu': "1",
+                    'memory': '4G'
+                },
+                'requests': {
+                    'cpu': "1",
+                    'memory': '3G'
+                }
+            }
+
+        }],
+        'restartPolicy': 'Never',
+    }
+}
 
 from __future__ import print_function
 
@@ -23,8 +51,9 @@ from functools import partial
 
 count_cols = 40
 count_rows = 80500
-common_data = pd.DataFrame(np.random.RandomState(451).randn(count_rows, count_cols)).sample(frac=1, random_state=451).reset_index()
-byte_count = common_data.memory_usage().sum() # bytes
+common_data = pd.DataFrame(np.random.RandomState(451).randn(
+    count_rows, count_cols)).sample(frac=1, random_state=451).reset_index()
+byte_count = common_data.memory_usage().sum()  # bytes
 print("Generated common data of size {}".format(thelib.get_(byte_count)))
 
 client = Client('192.168.1.151:8786')
@@ -33,7 +62,8 @@ client = Client('192.168.1.151:8786')
 future_common_data = client.scatter(common_data, broadcast=True)
 
 the_work = partial(thelib.do_work)
-futures = client.map(lambda idx: the_work(idx + 1, future_common_data), range(count_cols))
+futures = client.map(lambda idx: the_work(
+    idx + 1, future_common_data), range(count_cols))
 # futures = client.map(lambda idx: thelib.do_work(idx + 1, future_common_data), range(count_cols))
 
 print(client.gather(futures))
@@ -59,6 +89,6 @@ password
 
 import itertools
 list(itertools.chain.from_iterable([[1, 2, 3], [4, 5, 6]]))
-list(itertools.chain.from_iterable([[1, 2, 3], [4, 5, 6], [[1], [8,2]]]))
+list(itertools.chain.from_iterable([[1, 2, 3], [4, 5, 6], [[1], [8, 2]]]))
 
 import featuretools as ft
