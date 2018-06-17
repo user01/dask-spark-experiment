@@ -9,7 +9,6 @@ password: dasker
 
 jupyter:
   name: jupyter
-  replicas: 1
   serviceType: "LoadBalancer"
   servicePort: 443
   resources:
