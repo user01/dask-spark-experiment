@@ -29,15 +29,17 @@ spec:
         - name: {{ template "dask.fullname" . }}-jupyter
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - bash
           args:
-            - bash /start-jupyter.sh
+            - /root/jupyter-data/start_jupyter.sh
           ports:
             - containerPort: 8888
           resources:
 {{ toYaml .Values.jupyter.resources | indent 12 }}
           volumeMounts:
             - name: config-volume
-              mountPath: /root/.jupyter
+              mountPath: /root/jupyter-data
           env:
       volumes:
         - name: config-volume

@@ -12,7 +12,8 @@ which you can connect to manage notebooks.
 You can get these addresses by running the following:
 
   export JUPYTER_NOTEBOOK_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "dask.fullname" . }}-jupyter -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-  echo http://$JUPYTER_NOTEBOOK_IP:{{ .Values.jupyter.servicePort }} -- Jupyter notebook
+  echo https://$JUPYTER_NOTEBOOK_IP -- Jupyter notebook
+  echo https://$(kubectl get svc --namespace {{ .Release.Namespace }} {{ template "dask.fullname" . }}-jupyter -o jsonpath='{.status.loadBalancer.ingress[0].ip}') | pbcopy
 
   NOTE: The default password to login to the notebook server is `dask`.
 
