@@ -3,12 +3,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "dask.fullname" . }}-jupyter-config
+  name: {{ template "spark.fullname" . }}-jupyter-config
   labels:
-    app: {{ template "dask.name" . }}
+    app: {{ template "spark.name" . }}
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
-    chart: {{ template "dask.chart" . }}
+    chart: {{ template "spark.chart" . }}
     component: jupyter
     namespace: {{ .Values.namespace }}
 data:

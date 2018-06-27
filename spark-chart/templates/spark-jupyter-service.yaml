@@ -3,12 +3,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "dask.fullname" . }}-jupyter
+  name: {{ template "spark.fullname" . }}-jupyter
   labels:
-    app: {{ template "dask.name" . }}
+    app: {{ template "spark.name" . }}
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
-    chart: {{ template "dask.chart" . }}
+    chart: {{ template "spark.chart" . }}
     component: jupyter
     namespace: {{ .Values.namespace }}
 spec:
@@ -16,7 +16,7 @@ spec:
     - port: {{ .Values.jupyter.servicePort }}
       targetPort: 8888
   selector:
-    app: {{ template "dask.name" . }}
+    app: {{ template "spark.name" . }}
     release: {{ .Release.Name | quote }}
     component: jupyter
   type: {{ .Values.jupyter.serviceType }}

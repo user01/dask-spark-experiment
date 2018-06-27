@@ -3,19 +3,19 @@
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: {{ template "dask.fullname" . }}-jupyter
+  name: {{ template "spark.fullname" . }}-jupyter
   labels:
-    app: {{ template "dask.name" . }}
+    app: {{ template "spark.name" . }}
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
-    chart: {{ template "dask.chart" . }}
+    chart: {{ template "spark.chart" . }}
     component: jupyter
     namespace: {{ .Values.namespace }}
 spec:
   replicas: {{ .Values.jupyter.replicas }}
   selector:
     matchLabels:
-      app: {{ template "dask.name" . }}
+      app: {{ template "spark.name" . }}
       release: {{ .Release.Name | quote }}
       component: jupyter
   strategy:
@@ -23,12 +23,12 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ template "dask.name" . }}
+        app: {{ template "spark.name" . }}
         release: {{ .Release.Name | quote }}
         component: jupyter
     spec:
       containers:
-        - name: {{ template "dask.fullname" . }}-jupyter
+        - name: {{ template "spark.fullname" . }}-jupyter
           image: "{{ .Values.jupyter.image.repository }}:{{ .Values.jupyter.image.tag }}"
           imagePullPolicy: {{ .Values.jupyter.image.pullPolicy }}
           ports:
@@ -40,13 +40,13 @@ spec:
               mountPath: /home/jovyan/.jupyter
           env:
             - name: DASK_SCHEDULER_ADDRESS
-              value: {{ template "dask.fullname" . }}-scheduler:{{ .Values.scheduler.servicePort }}
+              value: {{ template "spark.fullname" . }}-scheduler:{{ .Values.scheduler.servicePort }}
 {{- if .Values.jupyter.env }}
 {{ toYaml .Values.jupyter.env | indent 12 }}
 {{- end }}
       volumes:
         - name: config-volume
           configMap:
-            name: {{ template "dask.fullname" . }}-jupyter-config
+            name: {{ template "spark.fullname" . }}-jupyter-config
 
 {{ end }}

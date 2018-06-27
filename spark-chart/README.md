@@ -2,7 +2,7 @@
 
 Dask allows distributed computation in Python.
 
--  https://dask.pydata.org
+-  https://spark.pydata.org
 -  http://jupyter.org/
 
 

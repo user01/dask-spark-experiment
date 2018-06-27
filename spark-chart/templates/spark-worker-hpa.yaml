@@ -2,7 +2,7 @@ apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
   annotations:
-  name: {{ template "dask.fullname" . }}-hpa
+  name: {{ template "spark.fullname" . }}-hpa
   namespace: {{ .Values.namespace }}
 spec:
   maxReplicas: {{ .Values.worker.maxreplicas }}
@@ -10,5 +10,5 @@ spec:
   scaleTargetRef:
     apiVersion: extensions/v1
     kind: Deployment
-    name: {{ template "dask.fullname" . }}-worker
+    name: {{ template "spark.fullname" . }}-worker
   targetCPUUtilizationPercentage: {{ .Values.worker.targetCPUUtilizationPercentage }}

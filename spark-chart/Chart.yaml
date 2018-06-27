@@ -1,8 +1,8 @@
-name: dask-cluster-scaler
+name: spark-chart
 version: 1.0.5
 appVersion: 0.17.4
-description: Distributed computation in Python with task scheduling
-home: https://dask.pydata.org
+description: Distributed computation with Spark on k8s
+home: https://spark.pydata.org
 icon: https://avatars3.githubusercontent.com/u/17131925?v=3&s=200
 sources:
 - https://github.com/dask/dask

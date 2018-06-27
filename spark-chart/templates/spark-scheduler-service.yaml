@@ -1,24 +1,24 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "dask.fullname" . }}-scheduler
+  name: {{ template "spark.fullname" . }}-scheduler
   labels:
-    app: {{ template "dask.name" . }}
+    app: {{ template "spark.name" . }}
     heritage: {{ .Release.Service | quote }}
     release: {{ .Release.Name | quote }}
-    chart: {{ template "dask.chart" . }}
+    chart: {{ template "spark.chart" . }}
     component: scheduler
     namespace: {{ .Values.namespace }}
 spec:
   ports:
-    - name: {{ template "dask.fullname" . }}-scheduler
+    - name: {{ template "spark.fullname" . }}-scheduler
       port: {{ .Values.scheduler.servicePort }}
       targetPort: 8786
-    - name: {{ template "dask.fullname" . }}-webui
+    - name: {{ template "spark.fullname" . }}-webui
       port: {{ .Values.webUI.servicePort }}
       targetPort: 8787
   selector:
-    app: {{ template "dask.name" . }}
+    app: {{ template "spark.name" . }}
     release: {{ .Release.Name | quote }}
     component: scheduler
   type: {{ .Values.scheduler.serviceType }}
