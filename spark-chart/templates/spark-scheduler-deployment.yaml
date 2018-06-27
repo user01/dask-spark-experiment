@@ -27,8 +27,8 @@ spec:
     spec:
       containers:
         - name: {{ template "spark.fullname" . }}-scheduler
-          image: "{{ .Values.scheduler.image.repository }}:{{ .Values.scheduler.image.tag }}"
-          imagePullPolicy: {{ .Values.scheduler.image.pullPolicy }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - bin/spark-class
             - org.apache.spark.deploy.master.Master

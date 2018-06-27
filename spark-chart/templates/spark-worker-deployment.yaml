@@ -27,8 +27,8 @@ spec:
     spec:
       containers:
         - name: {{ template "spark.fullname" . }}-worker
-          image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
-          imagePullPolicy: {{ .Values.worker.image.pullPolicy }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - bin/spark-class
             - org.apache.spark.deploy.worker.Worker

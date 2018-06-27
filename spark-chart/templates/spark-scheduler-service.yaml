@@ -14,9 +14,6 @@ spec:
     - name: {{ template "spark.fullname" . }}-scheduler
       port: {{ .Values.scheduler.servicePort }}
       targetPort: 8786
-    - name: {{ template "spark.fullname" . }}-webui
-      port: {{ .Values.webUI.servicePort }}
-      targetPort: 8787
   selector:
     app: {{ template "spark.name" . }}
     release: {{ .Release.Name | quote }}

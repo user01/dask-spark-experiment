@@ -29,8 +29,8 @@ spec:
     spec:
       containers:
         - name: {{ template "spark.fullname" . }}-jupyter
-          image: "{{ .Values.jupyter.image.repository }}:{{ .Values.jupyter.image.tag }}"
-          imagePullPolicy: {{ .Values.jupyter.image.pullPolicy }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: 8888
           resources:
