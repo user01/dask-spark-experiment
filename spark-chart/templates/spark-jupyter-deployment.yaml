@@ -31,19 +31,20 @@ spec:
         - name: {{ template "spark.fullname" . }}-jupyter
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - bash
+          args:
+            - /root/jupyter-data/start_jupyter.sh
           ports:
             - containerPort: 8888
           resources:
 {{ toYaml .Values.jupyter.resources | indent 12 }}
           volumeMounts:
             - name: config-volume
-              mountPath: /home/jovyan/.jupyter
+              mountPath: /root/jupyter-data
           env:
-            - name: DASK_SCHEDULER_ADDRESS
-              value: {{ template "spark.fullname" . }}-scheduler:{{ .Values.scheduler.servicePort }}
-{{- if .Values.jupyter.env }}
-{{ toYaml .Values.jupyter.env | indent 12 }}
-{{- end }}
+            - name: SPARK_SCHEDULER_ADDRESS
+              value: spark://{{ template "spark.fullname" . }}-scheduler:{{ .Values.scheduler.servicePort }}
       volumes:
         - name: config-volume
           configMap:

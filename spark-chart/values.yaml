@@ -1,4 +1,5 @@
 namespace: default
+password: sparker
 
 image:
   repository: "spark-trial"
@@ -25,7 +26,6 @@ worker:
   replicas: 1
   minreplicas: 1
   maxreplicas: 3
-  targetCPUUtilizationPercentage: 20
   resources:
     limits:
       cpu: 1
