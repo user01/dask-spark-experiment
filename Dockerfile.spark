@@ -71,6 +71,10 @@ RUN curl -sL --retry 3 \
 
 ENV PATH $PATH:/root/anaconda/bin
 
+RUN conda update -y -n base conda
+RUN conda install -y -c conda-forge ipywidgets
+RUN conda install -y -c anaconda nodejs
+
 RUN conda install -y \
       jupyterlab==0.32.1 \
       numpy==1.14.3 \
@@ -78,8 +82,6 @@ RUN conda install -y \
 
 RUN jupyter labextension install \
             @jupyter-widgets/jupyterlab-manager
-
-COPY start-jupyter.sh /start-jupyter.sh
 
 RUN mkdir -p /notebooks
 WORKDIR /notebooks

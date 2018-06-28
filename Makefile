@@ -2,16 +2,17 @@ IP := $(shell ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo 
 
 # http://192.168.0.59:8080/
 spark-build:
-	docker build -t spark-trial:v001 -f Dockerfile.spark .
+	docker build -t user01e/spark-trial:0.1 -f Dockerfile.spark .
+	docker push user01e/spark-trial:0.1
 
 spark-master:
-	docker run --rm -it -p 8080:8080 -p 7077:7077 spark-trial:v001 bin/spark-class org.apache.spark.deploy.master.Master
+	docker run --rm -it -p 8080:8080 -p 7077:7077 user01e/spark-trial:0.1 bin/spark-class org.apache.spark.deploy.master.Master
 
 spark-worker:
-	docker run --rm -it spark-trial:v001 bin/spark-class org.apache.spark.deploy.worker.Worker spark://$(IP):7077 -c 1 -m 1GB
+	docker run --rm -it user01e/spark-trial:0.1 bin/spark-class org.apache.spark.deploy.worker.Worker spark://$(IP):7077 -c 1 -m 1GB
 
 spark-notebook:
-	docker run --rm -it -p 9999:8888 spark-trial:v001 jupyter notebook --ip=0.0.0.0 --allow-root
+	docker run --rm -it -p 9999:8888 user01e/spark-trial:0.1 jupyter notebook --ip=0.0.0.0 --allow-root
 
 
 # http://localhost:8787/status

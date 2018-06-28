@@ -39,8 +39,6 @@ RUN jupyter labextension install \
 RUN conda install -y -c conda-forge s3fs gcsfs
 RUN pip install git+https://github.com/dask/dask-adlfs@4b61ca5705e85d370c3078b793dfc9c1d668a466
 
-COPY start-jupyter.sh /start-jupyter.sh
-
 RUN mkdir -p /notebooks
 WORKDIR /notebooks
 
