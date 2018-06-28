@@ -44,7 +44,7 @@ spec:
               mountPath: /root/jupyter-data
           env:
             - name: SPARK_SCHEDULER_ADDRESS
-              value: spark://{{ template "spark.fullname" . }}-scheduler:{{ .Values.scheduler.servicePort }}
+              value: spark://{{ template "spark.fullname" . }}-scheduler:{{ .Values.scheduler.accessPort }}
       volumes:
         - name: config-volume
           configMap:
