@@ -1,5 +1,12 @@
 IP := $(shell ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n1)
 
+dask-certs:
+	mkdir -p cadir
+	python make_tls_certs.py
+	mv tls-ca-cert.pem tls-ca-file.pem
+	rm -rf cadir/
+	rm tls-ca-key.pem tls-cert-chain.pem tls-key-cert.pem
+
 # http://192.168.0.59:8080/
 spark-build:
 	docker build -t user01e/sparktrial:v005 -f Dockerfile.spark .
