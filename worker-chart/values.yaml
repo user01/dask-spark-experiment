@@ -1,0 +1,53 @@
+# nameOverride: dask
+# fullnameOverride: dask
+
+scheduler:
+  name: scheduler
+  image:
+    repository: "daskdev/dask"
+    tag: 1.1.0
+    pullPolicy: IfNotPresent
+  replicas: 1
+  serviceType: "LoadBalancer"
+  servicePort: 8786
+  resources:
+    limits:
+      cpu: 1.8
+      memory: 3G
+    requests:
+      cpu: 1.8
+      memory: 3G
+  tolerations: []
+  nodeSelector: {}
+  affinity: {}
+
+webUI:
+  name: webui
+  servicePort: 80
+
+worker:
+  name: worker
+  image:
+    repository: "daskdev/dask"
+    tag: 1.1.0
+    pullPolicy: IfNotPresent
+  replicas: 3
+  aptPackages: >-
+  default_resources:  # overwritten by resource limits if they exist
+    cpu: 1
+    memory: "2GiB"
+  env:
+    # - name: EXTRA_CONDA_PACKAGES
+    #   value: numba xarray -c conda-forge
+    # - name: EXTRA_PIP_PACKAGES
+    #   value: s3fs dask-ml --upgrade
+  resources:
+    limits:
+      cpu: 1
+      memory: 2G
+    requests:
+      cpu: 1
+      memory: 2G
+  tolerations: []
+  nodeSelector: {}
+  affinity: {}
