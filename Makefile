@@ -8,6 +8,12 @@ dask-certs:
 	rm tls-ca-key.pem tls-cert-chain.pem tls-key-cert.pem
 	kubectl create secret generic dask-certs --from-file=./tls-ca-file.pem --from-file=./tls-cert.pem --from-file=./tls-key.pem
 
+scheduler:
+	DASK_CONFIG=/Users/erik/code/python/dask2/.dask-config-local.yaml dask-scheduler --host tls://localhost --scheduler-file scheduler.json
+
+worker:
+	DASK_CONFIG=/Users/erik/code/python/dask2/.dask-config-local.yaml dask-worker --scheduler-file scheduler.json
+
 # http://192.168.0.59:8080/
 spark-build:
 	docker build -t user01e/sparktrial:v005 -f Dockerfile.spark .
@@ -46,7 +52,8 @@ dask-prep:
 
 minikube:
 	-minikube delete
-	minikube start --memory 8192 --cpus 6
+	# minikube start --memory 8192 --cpus 6
+	minikube start --cpus 7 --memory 12288 --disk-size 30g
 	# minikube start --memory 4096 --cpus 4  --extra-config kubelet.EnableCustomMetrics=true
 	sleep 10
 	helm init

@@ -3,3 +3,6 @@ export/
 __pycache__/*
 **/*.pyc
 *.ipynb
+scheduler.json
+dask-worker-space/
+node_modules/
