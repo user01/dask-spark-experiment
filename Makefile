@@ -6,6 +6,7 @@ dask-certs:
 	mv tls-ca-cert.pem tls-ca-file.pem
 	rm -rf cadir/
 	rm tls-ca-key.pem tls-cert-chain.pem tls-key-cert.pem
+	kubectl create secret generic dask-certs --from-file=./tls-ca-file.pem --from-file=./tls-cert.pem --from-file=./tls-key.pem
 
 # http://192.168.0.59:8080/
 spark-build:
