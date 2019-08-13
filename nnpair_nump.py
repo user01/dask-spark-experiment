@@ -60,12 +60,14 @@ correct_side_signs = np_dot(pts_forward - pts_plane, normals, axis=1)
 
 diff = points.reshape(-1, 1, 3) - pts_plane.reshape(1, -1, 3)
 masks = np_dot(diff, normals.reshape(1, -1, 3), axis=2) * correct_side_signs.reshape(1, -1) >= 0
+for segment_mask in masks.T:
+    break
 points[masks.all(axis=1)].tolist()
 0
 
 
 def closest_pt(p, v, w):
-    d2 = np.linalg.norm(v - w)
+    d2 = np.linalg.norm(v - w) # this may be slow even under numba
     if d2 <= 0:
         return v
     t = np.dot(p - v, w - v) / d2
@@ -91,23 +93,54 @@ closest_pt(
     w = np.array([0,1,0]),
     p = np.array([0,11,220]),
 )
-
-
-
-def closest_pt(p, v, w):
-    d2 = np.linalg.norm(v - w)
-    if d2 <= 0:
-        return v
-    t = np.dot(p - v, w - v) / d2
-    if t < 0:
-        return v
-    elif t > 1.0:
-        return w
-    project = v + t * (w - v)
-    return project
-
 closest_pt(
     v = np.array([0,0,0]),
     w = np.array([0,1,0]),
     p = np.array([0,-1,0]),
 )
+
+
+def closest_pts(p, v, w):
+    assert v.shape == (3,)
+    assert w.shape == (3,)
+    assert p.shape[1] == 3
+    d2 = np.linalg.norm(v - w) # this may be slow even under numba
+
+    t = np.dot(p - v, w - v) / d2
+    assert t.shape[0] == p.shape[0]
+
+    closest_pts = np.where(
+        (t < 0).reshape(-1, 1),
+        v.reshape(1, -1),
+        np.where(
+            (t > 1).reshape(-1, 1),
+            w.reshape(1, -1),
+            v + t.reshape(-1, 1) * (w - v).reshape(1, 3),
+        )
+    )
+    closest_pts.shape
+    assert closest_pts.shape == p.shape
+    return closest_pts
+
+
+closest_pts(
+    v = np.array([0,0,0]),
+    w = np.array([0,1,0]),
+    p = np.array([
+        [0,-2,0],
+        [0,-1,0],
+        [0,0.5,0],
+        [0,0.5,0.1],
+        [0,1,0],
+        [0,2,0],
+    ]),
+)
+
+
+
+
+# RDP the WBT sequence
+# find planes for the segments
+# find the masks for all the segments
+# or for each nns point, find the relevant segments
+# then for every segment, find the closest point
