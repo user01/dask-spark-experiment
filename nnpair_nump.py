@@ -16,54 +16,94 @@ points.shape
 points.tolist()
 
 
-normal = np.array([0,1,0.])
-pt_plane = np.array([0,0,0.])
-pt_forward = np.array([0,1,0.])
-correct_side_sign = np.dot(pt_forward - pt_plane, normal)
+# normal = np.array([0,1,0.])
+# pt_plane = np.array([0,0,0.])
+# pt_forward = np.array([0,1,0.])
+# correct_side_sign = np.dot(pt_forward - pt_plane, normal)
+#
+# pt_test = np.array([0,1,0])
+# np.dot(pt_test - pt_plane, normal) * correct_side_sign > 0
+#
+# mask_plane1 = (np.dot(points - pt_plane, normal) * correct_side_sign >= 0)
+# points[mask_plane1].tolist()
+#
+# normal = np.array([-1,-1,-1.])
+# pt_plane = np.array([0,3,0.])
+# pt_forward = np.array([-1,2,-1.])
+# correct_side_sign = np.dot(pt_forward - pt_plane, normal)
+#
+# pt_test = np.array([0,1,0])
+# np.dot(pt_test - pt_plane, normal) * correct_side_sign > 0
+#
+# mask_plane2 = (np.dot(points - pt_plane, normal) * correct_side_sign >= 0)
+# points[mask_plane2].tolist()
+# points[mask_plane2 & mask_plane1].tolist()
+#
+# # ####################
+# normals = np.array([ # normals that define the plane
+#     [0,1,0],
+#     [-1,-1,-1.],
+# ])
+# pts_plane = np.array([ # pts fixed on plane
+#     [0,0,0],
+#     [0,3,0.],
+# ])
+# pts_forward = np.array([ # point on the forward side of the plane
+#     [0,1,0],
+#     [-1,2,-1.],
+# ])
+#
+# def np_dot(x, y, axis=1):
+#     return np.sum(x * y, axis=axis)
+# correct_side_signs = np_dot(pts_forward - pts_plane, normals, axis=1)
+#
+#
+# diff = points.reshape(-1, 1, 3) - pts_plane.reshape(1, -1, 3)
+# masks = np_dot(diff, normals.reshape(1, -1, 3), axis=2) * correct_side_signs.reshape(1, -1) >= 0
+# for segment_mask in masks.T:
+#     break
+# points[masks.all(axis=1)].tolist()
 
-pt_test = np.array([0,1,0])
-np.dot(pt_test - pt_plane, normal) * correct_side_sign > 0
+# ########################################################
 
-mask_plane1 = (np.dot(points - pt_plane, normal) * correct_side_sign >= 0)
-points[mask_plane1].tolist()
+def plane_masks(normals, pts_plane, pts_forward, pts_test):
+    correct_side_signs = np_dot(pts_forward - pts_plane, normals, axis=1)
+    diff = pts_test.reshape(-1, 1, 3) - pts_plane.reshape(1, -1, 3)
+    masks = np_dot(diff, normals.reshape(1, -1, 3), axis=2) * correct_side_signs.reshape(1, -1) >= 0
+    return masks
 
-normal = np.array([-1,-1,-1.])
-pt_plane = np.array([0,3,0.])
-pt_forward = np.array([-1,2,-1.])
-correct_side_sign = np.dot(pt_forward - pt_plane, normal)
+def _plane_masks(pts_plane, pts_forward, pts_test):
+    normals = pts_forward - pts_plane
+    correct_side_signs = np_dot(pts_forward - pts_plane, normals, axis=1)
+    diff = pts_test.reshape(-1, 1, 3) - pts_plane.reshape(1, -1, 3)
+    masks = np_dot(diff, normals.reshape(1, -1, 3), axis=2) * correct_side_signs.reshape(1, -1) >= 0
+    return masks
 
-pt_test = np.array([0,1,0])
-np.dot(pt_test - pt_plane, normal) * correct_side_sign > 0
+# need to compute ahead masks and behind masks
+# for each there's the orthogonal and the bisection
+# orthogonal exist for every segment, while bisections for all the first and last
+# so bisections automatically are false at the edges
 
-mask_plane2 = (np.dot(points - pt_plane, normal) * correct_side_sign >= 0)
-points[mask_plane2].tolist()
-points[mask_plane2 & mask_plane1].tolist()
-
-# ####################
-normals = np.array([ # normals that define the plane
-    [0,1,0],
-    [-1,-1,-1.],
-])
-pts_plane = np.array([ # pts fixed on plane
+sequence = np.array([
     [0,0,0],
-    [0,3,0.],
-])
-pts_forward = np.array([ # point on the forward side of the plane
     [0,1,0],
-    [-1,2,-1.],
+    [0,2,1],
+    [0,3,4],
+    [1,4,5],
 ])
 
-def np_dot(x, y, axis=1):
-    return np.sum(x * y, axis=axis)
-correct_side_signs = np_dot(pts_forward - pts_plane, normals, axis=1)
+pts_forward = sequence[1:]
+pts_plane = sequence[:-1]
+normal_forward = pts_forward - pts_plane
+normal_backward = -normal_forward
+
+mask_ahead_ortho = _plane_masks(pts_plane=sequence[:-1], pts_forward=sequence[1:], pts_test=points)
+mask_behind_ortho = _plane_masks(pts_plane=sequence[1:], pts_forward=sequence[:-1], pts_test=points)
+mask_ahead_ortho.shape
+mask_behind_ortho.shape
 
 
-diff = points.reshape(-1, 1, 3) - pts_plane.reshape(1, -1, 3)
-masks = np_dot(diff, normals.reshape(1, -1, 3), axis=2) * correct_side_signs.reshape(1, -1) >= 0
-for segment_mask in masks.T:
-    break
-points[masks.all(axis=1)].tolist()
-0
+
 
 
 def closest_pt(p, v, w):
