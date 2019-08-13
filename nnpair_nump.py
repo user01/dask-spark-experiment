@@ -101,7 +101,22 @@ mask_ahead_ortho = _plane_masks(pts_plane=sequence[:-1], pts_forward=sequence[1:
 mask_behind_ortho = _plane_masks(pts_plane=sequence[1:], pts_forward=sequence[:-1], pts_test=points)
 mask_ahead_ortho.shape
 mask_behind_ortho.shape
+f"There are {mask_behind_ortho.shape[1]} segments in this sequence"
 
+pts_plane = sequence[:-2] + (0.5 * (sequence[2:] - sequence[:-2]))
+mask_ahead_bisect = np.concatenate([
+    np.array([False] * mask_ahead_ortho.shape[0]).reshape(-1, 1),
+    _plane_masks(pts_plane=pts_plane, pts_forward=sequence[:-2], pts_test=points),
+], axis=1)
+mask_behind_bisect = np.concatenate([
+    _plane_masks(pts_plane=pts_plane, pts_forward=sequence[2:], pts_test=points),
+    np.array([False] * mask_ahead_ortho.shape[0]).reshape(-1, 1),
+], axis=1)
+mask_ahead_bisect.shape
+mask_behind_bisect.shape
+# bisection masks at the extreme fail automatically - they have nothing to compare against
+
+mask_points_per_segment = (mask_ahead_ortho | mask_ahead_bisect) & (mask_behind_ortho | mask_behind_bisect)
 
 
 
