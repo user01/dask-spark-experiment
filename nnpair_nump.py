@@ -55,30 +55,45 @@ pts_forward = np.array([ # point on the forward side of the plane
 
 def np_dot(x, y, axis=1):
     return np.sum(x * y, axis=axis)
-# np.tensordot(pts_forward - pts_plane, normals, axes=(1,1)).swapaxes(1,2)
-# correct_side_signs = np.sum((pts_forward - pts_plane) * normals, axis=1)
 correct_side_signs = np_dot(pts_forward - pts_plane, normals, axis=1)
-# np.einsum('ijk,k->ij',pts_forward - pts_plane,normals)
-# correct_side_sign = np.dot(pts_forward - pts_plane, normals)
 
-points.shape
-pts_plane.shape
-points.reshape(-1, 1, 3).shape
-pts_plane.reshape(1, -1, 3).shape
+
 diff = points.reshape(-1, 1, 3) - pts_plane.reshape(1, -1, 3)
-diff.shape
-normals.shape
-
-normals.reshape(1, -1, 3).shape
-correct_side_signs.shape
-np_dot(diff, normals.reshape(1, -1, 3), axis=2).shape
-correct_side_signs.reshape(1, -1).shape
 masks = np_dot(diff, normals.reshape(1, -1, 3), axis=2) * correct_side_signs.reshape(1, -1) >= 0
-masks.all(axis=1)
 points[masks.all(axis=1)].tolist()
 0
 
 
+def closest_pt(p, v, w):
+    d2 = np.linalg.norm(v - w)
+    if d2 <= 0:
+        return v
+    t = np.dot(p - v, w - v) / d2
+    if t < 0:
+        return v
+    elif t > 1.0:
+        return w
+    project = v + t * (w - v)
+    return project
+
+closest_pt(
+    v = np.array([0,0,0]),
+    w = np.array([0,1,0]),
+    p = np.array([0,-1,0]),
+)
+closest_pt(
+    v = np.array([0,0,0]),
+    w = np.array([0,1,0]),
+    p = np.array([0,-1,220]),
+)
+closest_pt(
+    v = np.array([0,0,0]),
+    w = np.array([0,1,0]),
+    p = np.array([0,11,220]),
+)
+
+
+0
 
 
 
