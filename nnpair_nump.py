@@ -5,18 +5,18 @@ from rdp import rdp
 from numba import jit
 
 
-# @jit(nopython=True)
+@jit(nopython=True)
 def np_dot(x, y, axis=1):
     return np.sum(x * y, axis=axis)
 
-# @jit(nopython=True)
+@jit(nopython=True)
 def plane_masks(normals, pts_plane, pts_forward, pts_test):
     correct_side_signs = np_dot(pts_forward - pts_plane, normals, axis=1)
     diff = pts_test.reshape(-1, 1, 3) - pts_plane.reshape(1, -1, 3)
     masks = np_dot(diff, normals.reshape(1, -1, 3), axis=2) * correct_side_signs.reshape(1, -1) >= 0
     return masks
 
-# @jit(nopython=True)
+@jit(nopython=True)
 def _plane_masks(pts_plane, pts_forward, pts_test):
     normals = pts_forward - pts_plane
     correct_side_signs = np_dot(pts_forward - pts_plane, normals, axis=1)
@@ -29,7 +29,8 @@ def _plane_masks(pts_plane, pts_forward, pts_test):
 # orthogonal exist for every segment, while bisections for all the first and last
 # so bisections automatically are false at the edges
 
-# @jit(nopython=True)
+
+@jit(nopython=True)
 def generate_all_masks(sequence, pts_test):
     assert pts_test.shape[1] == 3
     mask_ahead_ortho = _plane_masks(pts_plane=sequence[:-1], pts_forward=sequence[1:], pts_test=pts_test)
@@ -38,17 +39,17 @@ def generate_all_masks(sequence, pts_test):
 
     pts_plane = sequence[:-2] + (0.5 * (sequence[2:] - sequence[:-2]))
     mask_ahead_bisect = np.concatenate(
-        [
+        (
             np.array([False] * mask_ahead_ortho.shape[0]).reshape(-1, 1),
             _plane_masks(pts_plane=pts_plane, pts_forward=sequence[:-2], pts_test=pts_test),
-        ],
+        ),
         axis=1,
     )
     mask_behind_bisect = np.concatenate(
-        [
+        (
             _plane_masks(pts_plane=pts_plane, pts_forward=sequence[2:], pts_test=pts_test),
             np.array([False] * mask_ahead_ortho.shape[0]).reshape(-1, 1),
-        ],
+        ),
         axis=1,
     )
     # bisection masks at the extreme fail automatically - they have nothing to compare against
@@ -58,7 +59,7 @@ def generate_all_masks(sequence, pts_test):
     return mask_points_per_segment
 
 # given multiple segments, pick the closest point on any to the point p
-# @jit(nopython=True)
+@jit(nopython=True)
 def closests_pt(p, a_s, b_s):
     """Find the closest point on segments to the point"""
     assert a_s.shape == b_s.shape
@@ -89,7 +90,7 @@ def closests_pt(p, a_s, b_s):
 
 
 # print(json.dumps(points[mask_points_per_segment.T[0]].round(3).tolist()))
-# @jit(nopython=True)
+@jit(nopython=True)
 def pick_points(sequence, points, threshold:float):
     mask_points_per_segment = generate_all_masks(sequence, pts_test=points)
     results = np.ones((mask_points_per_segment.shape[0], 8)) * -1
@@ -142,7 +143,7 @@ sequence = np.array([
 # vector style
 np.stack([sequence[idx:idx+2] for idx in range(sequence.shape[0] - 1)]).reshape(-1, 3).tolist()
 
-results = pick_points(sequence=sequence, points=points, threshold=1.5)
+results = pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
 
 print(json.dumps(results[:, -3:].round(2).tolist()))
 # results[results[:, 0] > -1].shape
