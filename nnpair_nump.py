@@ -87,7 +87,10 @@ def closests_pt(p, a_s, b_s):
     return smallest_distance, best_point
 
 @jit(nopython=True)
-def pick_points(sequence, points, threshold:float):
+def pick_points(sequence, points, mds, threshold:float):
+    assert points.shape[0] == mds.shape[0]
+    assert points.shape[1] == 3
+    assert len(mds.shape) == 1
     mask_points_per_segment = generate_all_masks(sequence, pts_test=points)
     results = np.ones((mask_points_per_segment.shape[0], 8)) * -1
     vs = sequence[:-1]
@@ -100,8 +103,7 @@ def pick_points(sequence, points, threshold:float):
         if distance <= threshold:
             results[idx] = np.array([
                 distance,
-                # mds[idx],
-                0.0, # MD
+                mds[idx],
                 point[0],
                 point[1],
                 point[2],
@@ -121,7 +123,7 @@ for x in x_:
             points.append((x,y,z))
 points = np.stack(points)
 
-mds = np.array([0.0, 5.0])
+mds = np.random.RandomState(451).randn(points.shape[0])
 sequence = np.array([
     [0,0,0],
     [0,1,0],
@@ -133,8 +135,8 @@ sequence = np.array([
 # vector style
 np.stack([sequence[idx:idx+2] for idx in range(sequence.shape[0] - 1)]).reshape(-1, 3).tolist()
 
-%timeit pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
-%timeit pick_points.py_func(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
+%timeit pick_points(sequence=sequence.astype(np.float64), mds=mds, points=points.astype(np.float64), threshold=1.5)
+%timeit pick_points.py_func(sequence=sequence.astype(np.float64), mds=mds, points=points.astype(np.float64), threshold=1.5)
 # results = pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
 # results = pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
 
