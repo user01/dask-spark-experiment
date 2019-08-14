@@ -61,54 +61,27 @@ def generate_all_masks(sequence):
     mask_points_per_segment = (mask_ahead_ortho | mask_ahead_bisect) & (mask_behind_ortho | mask_behind_bisect)
     return mask_points_per_segment
 
-def closest_pts(p, v, w):
-    """For many points against a single segment, find the closest points"""
-    assert v.shape == (3,)
-    assert w.shape == (3,)
-    assert p.shape[1] == 3
-    d2 = np.linalg.norm(v - w) # this may be slow even under numba
-
-    t = np.dot(p - v, w - v) / d2
-    assert t.shape[0] == p.shape[0]
-
-    closest_pts = np.where(
-        (t < 0).reshape(-1, 1),
-        v.reshape(1, -1),
-        np.where(
-            (t > 1).reshape(-1, 1),
-            w.reshape(1, -1),
-            v + t.reshape(-1, 1) * (w - v).reshape(1, 3),
-        )
-    )
-    closest_pts.shape
-    assert closest_pts.shape == p.shape
-    return closest_pts
-
 # given multiple segments, pick the closest point on any to the point p
-def closests_pt(p, vs, ws):
+def closests_pt(p, a_s, b_s):
     """Find the closest point on segments to the point"""
-    assert vs.shape == ws.shape
-    d2 = np.linalg.norm(vs - ws, axis=1) # this may be slow even under numba
+    assert a_s.shape == b_s.shape
+    ab_s = b_s - a_s
+    ap_s = p.reshape(1, 3) - a_s
+    ab_sqr_len = np.sum(ab_s * ab_s, axis=1)
 
-    ts = np_dot(
-        p.reshape(1, 3) - vs,
-        ws - vs,
-        axis=1
-    ) / d2
-    assert ts.shape[0] == vs.shape[0]
+    t_s = np.sum(ab_s * ap_s, axis=1) / ab_sqr_len
+    assert t_s.shape[0] == a_s.shape[0]
 
     smallest_distance = -1.0
-    for idx in range(ts.shape[0]):
-        t = ts[idx]
+    for idx in range(t_s.shape[0]):
+        t = t_s[idx]
         if t < 0:
-            # pick vs for this one
-            picked = vs[idx]
+            picked = a_s[idx] # start
         elif t > 1:
-            # pick ws for this one
-            picked = ws[idx]
+            picked = b_s[idx] # end
         else:
             # pick along segment
-            picked = vs[idx] + t * (ws[idx] - vs[idx])
+            picked = a_s[idx] + t * (b_s[idx] - a_s[idx])
         distance = np.linalg.norm(picked - p)
 
         if smallest_distance < 0 or smallest_distance > distance:
@@ -116,6 +89,23 @@ def closests_pt(p, vs, ws):
             best_point = picked
 
     return smallest_distance, best_point
+
+# v = vs[mask_for_segments]
+# w = ws[mask_for_segments]
+#
+# a = v[0]
+# b = w[0]
+# p = (v + 0.5 * (w - v))[0]
+# ab = b - a
+# ap = p - a
+# ab_sqr_len = np.sum(ab * ab)
+# t = np.sum(ab * ap) / ab_sqr_len
+# (v + t * (w - v))[0]
+#
+# vw = (v[0] - w[0])
+# vw_len = np.sum(vw * vw)
+# np.dot(p - v[0], w[0] - v[0]) / d2
+# np.sqrt(np.dot(p - v[0], w[0] - v[0])) / d2
 
 mds = np.array([0.0, 5.0])
 
@@ -135,6 +125,9 @@ sequence = np.array([
 np.stack([sequence[idx:idx+2] for idx in range(sequence.shape[0] - 1)]).reshape(-1, 3).tolist()
 
 mask_points_per_segment = generate_all_masks(sequence)
+
+# print(json.dumps(points[mask_points_per_segment.T[0]].round(3).tolist()))
+
 threshold = 1.5
 results = np.ones((mask_points_per_segment.shape[0], 8)) * -1
 vs = sequence[:-1]
@@ -164,6 +157,21 @@ results[results[:, 0] > -1].shape
 results[results[:, 0] > -1][:, -3:].shape
 print(json.dumps(results[results[:, 0] > -1][:, -3:].round(2).tolist()))
 
+
+v = vs[mask_for_segments]
+w = ws[mask_for_segments]
+
+
+closests_pt(np.array([[0,0,0]]), vs[mask_for_segments], ws[mask_for_segments])[1]
+closest_pts(np.array([[0,0,0]]), v, w)
+closests_pt(w, vs[mask_for_segments], ws[mask_for_segments])[1]
+closest_pts(w, v[0], w[0])
+closests_pt(v, vs[mask_for_segments], ws[mask_for_segments])[1]
+closest_pts(v, v[0], w[0])
+closests_pt(v + 0.5 * (w - v), vs[mask_for_segments], ws[mask_for_segments])[1]
+closest_pts(v + 0.5 * (w - v), v[0], w[0])
+
+0
 
 # RDP the WBT sequence
 # find planes for the segments
