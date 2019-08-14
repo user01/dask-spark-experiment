@@ -24,15 +24,13 @@ def _plane_masks(pts_plane, pts_forward, pts_test):
     masks = np_dot(diff, normals.reshape(1, -1, 3), axis=2) * correct_side_signs.reshape(1, -1) >= 0
     return masks
 
-# need to compute ahead masks and behind masks
-# for each there's the orthogonal and the bisection
-# orthogonal exist for every segment, while bisections for all the first and last
-# so bisections automatically are false at the edges
-
-
 @jit(nopython=True)
 def generate_all_masks(sequence, pts_test):
     assert pts_test.shape[1] == 3
+    # need to compute ahead masks and behind masks
+    # for each there's the orthogonal and the bisection
+    # orthogonal exist for every segment, while bisections for all the first and last
+    # so bisections automatically are false at the edges
     mask_ahead_ortho = _plane_masks(pts_plane=sequence[:-1], pts_forward=sequence[1:], pts_test=pts_test)
     mask_behind_ortho = _plane_masks(pts_plane=sequence[1:], pts_forward=sequence[:-1], pts_test=pts_test)
     # f"There are {mask_behind_ortho.shape[1]} segments in this sequence"
@@ -58,10 +56,10 @@ def generate_all_masks(sequence, pts_test):
     assert mask_points_per_segment.shape == (pts_test.shape[0], sequence.shape[0] - 1)
     return mask_points_per_segment
 
-# given multiple segments, pick the closest point on any to the point p
 @jit(nopython=True)
 def closests_pt(p, a_s, b_s):
     """Find the closest point on segments to the point"""
+    # given multiple segments, pick the closest point on any to the point p
     assert a_s.shape == b_s.shape
     ab_s = b_s - a_s
     ap_s = p.reshape(1, 3) - a_s
@@ -88,8 +86,6 @@ def closests_pt(p, a_s, b_s):
 
     return smallest_distance, best_point
 
-
-# print(json.dumps(points[mask_points_per_segment.T[0]].round(3).tolist()))
 @jit(nopython=True)
 def pick_points(sequence, points, threshold:float):
     mask_points_per_segment = generate_all_masks(sequence, pts_test=points)
@@ -124,8 +120,6 @@ for x in x_:
         for z in x_:
             points.append((x,y,z))
 points = np.stack(points)
-# points.shape
-# json.dumps(points.tolist())
 
 mds = np.array([0.0, 5.0])
 sequence = np.array([
@@ -135,23 +129,17 @@ sequence = np.array([
     [0,3,4],
     [1,4,5],
 ])
-# sequence = np.array([
-#     [0,2,1],
-#     [0,3,4],
-# ])
 
 # vector style
 np.stack([sequence[idx:idx+2] for idx in range(sequence.shape[0] - 1)]).reshape(-1, 3).tolist()
 
-results = pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
+%timeit pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
+%timeit pick_points.py_func(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
+# results = pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
+# results = pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
 
 print(json.dumps(results[:, -3:].round(2).tolist()))
-# results[results[:, 0] > -1].shape
-# results[results[:, 0] > -1][:, -3:].shape
-# print(json.dumps(results[results[:, 0] > -1][:, -3:].round(2).tolist()))
 
-
-0
 
 # RDP the WBT sequence
 # find planes for the segments
