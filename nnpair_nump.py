@@ -36,7 +36,6 @@ def _plane_masks(pts_plane, pts_forward, pts_test):
 # orthogonal exist for every segment, while bisections for all the first and last
 # so bisections automatically are false at the edges
 
-
 def generate_all_masks(sequence):
     mask_ahead_ortho = _plane_masks(pts_plane=sequence[:-1], pts_forward=sequence[1:], pts_test=points)
     mask_behind_ortho = _plane_masks(pts_plane=sequence[1:], pts_forward=sequence[:-1], pts_test=points)
@@ -62,7 +61,6 @@ def generate_all_masks(sequence):
     mask_points_per_segment = (mask_ahead_ortho | mask_ahead_bisect) & (mask_behind_ortho | mask_behind_bisect)
     return mask_points_per_segment
 
-
 def closest_pts(p, v, w):
     """For many points against a single segment, find the closest points"""
     assert v.shape == (3,)
@@ -87,7 +85,6 @@ def closest_pts(p, v, w):
     return closest_pts
 
 # given multiple segments, pick the closest point on any to the point p
-
 def closests_pt(p, vs, ws):
     """Find the closest point on segments to the point"""
     assert vs.shape == ws.shape
@@ -120,12 +117,8 @@ def closests_pt(p, vs, ws):
 
     return smallest_distance, best_point
 
-
 mds = np.array([0.0, 5.0])
-# closests_pt(np.array([0,0,0]), vs, ws)
-# closests_pt(np.array([0,1,0]), vs, ws)
-# closests_pt(np.array([1,1,1]), vs, ws)
-# closests_pt(np.array([0,1,1]), vs, ws)
+
 sequence = np.array([
     [0,0,0],
     [0,1,0],
@@ -133,17 +126,26 @@ sequence = np.array([
     [0,3,4],
     [1,4,5],
 ])
-sequence.tolist()
+sequence = np.array([
+    [0,2,1],
+    [0,3,4],
+])
+
+# vector style
+np.stack([sequence[idx:idx+2] for idx in range(sequence.shape[0] - 1)]).reshape(-1, 3).tolist()
+
 mask_points_per_segment = generate_all_masks(sequence)
 threshold = 1.5
 results = np.ones((mask_points_per_segment.shape[0], 8)) * -1
-vs = sequence[1:]
-ws = sequence[:-1]
+vs = sequence[:-1]
+ws = sequence[1:]
 results.shape
 mask_points_per_segment.shape
 for idx in range(mask_points_per_segment.shape[0]):
     mask_for_segments = mask_points_per_segment[idx]
     mask_for_segments.shape
+    if not np.any(mask_for_segments):
+        continue
     distance, point = closests_pt(points[idx], vs[mask_for_segments], ws[mask_for_segments])
     if distance <= threshold:
         results[idx] = np.array([
@@ -161,9 +163,6 @@ for idx in range(mask_points_per_segment.shape[0]):
 results[results[:, 0] > -1].shape
 results[results[:, 0] > -1][:, -3:].shape
 print(json.dumps(results[results[:, 0] > -1][:, -3:].round(2).tolist()))
-
-
-
 
 
 # RDP the WBT sequence
