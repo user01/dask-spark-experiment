@@ -174,6 +174,8 @@ spi_values = spi_mapping[
 
 # NOTE: Loop through the ids
 # wbts_api_id = wbts_api_ids[0]
+vectors_lst = []
+stats_lst = []
 for wbts_api_id in wbts_api_ids:
 
     wbt_mask = coordinates_np[:, 0] == wbts_api_id
@@ -194,6 +196,7 @@ for wbts_api_id in wbts_api_ids:
         threshold=914.0,
     )
     # %timeit pick_points(sequence=np.ascontiguousarray(xyz_sequence), mds=np.ascontiguousarray(md_others), api_ids=np.ascontiguousarray(apis_others),points=np.ascontiguousarray(xyz_other),threshold=914,)
+    vectors_lst.append(vectors)
 
     # vector style outputs
     if False:
@@ -290,5 +293,7 @@ for wbts_api_id in wbts_api_ids:
         stats[idx, 26:31] = np.percentile(theta_nns, [0, 25, 50, 75, 100])
         stats[idx, 31] = np.std(theta_nns)
 
-    break
-stats
+    stats_lst.append(stats)
+
+np.concatenate(stats_lst).shape
+np.concatenate(vectors_lst).shape
