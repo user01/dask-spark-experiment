@@ -263,7 +263,7 @@ correct_side_sign = np.dot(lateral_normal, lateral_normal)
 # the correct side is the 'right' side. funny, right?
 
 nns_ids = np.unique(results[:, 0])
-stats = np.ones((nns_ids.shape[0], 32))
+stats = np.ones((nns_ids.shape[0], 37)) * -50
 
 for idx, nns_id in enumerate(nns_ids):
     break
@@ -291,21 +291,21 @@ stats[idx, 3] = sidenns_heel
 stats[idx, 4] = sidenns_toe
 
 distance_2d_nns = distance_2d[mask_nns]
-np.mean(distance_2d_nns)
-np.percentile(distance_2d_nns, [0, 25, 50, 75, 100])
-np.mean(distance_2d_nns)
+stats[idx, 5] = np.mean(distance_2d_nns)
+stats[idx, 6:11] = np.percentile(distance_2d_nns, [0, 25, 50, 75, 100])
+stats[idx, 11] = np.std(distance_2d_nns)
 
 distance_3d_nns = distance_3d[mask_nns]
-np.mean(distance_3d_nns)
-np.std(distance_3d_nns)
-np.percentile(distance_3d_nns, [0, 25, 50, 75, 100])
+stats[idx, 12] = np.mean(distance_3d_nns)
+stats[idx, 13:18] = np.percentile(distance_3d_nns, [0, 25, 50, 75, 100])
+stats[idx, 18] = np.std(distance_3d_nns)
 
 distance_vertical_nns = distance_vertical[mask_nns]
-np.mean(distance_vertical_nns)
-np.percentile(distance_vertical_nns, [0, 25, 50, 75, 100])
-np.std(distance_vertical_nns)
+stats[idx, 19] = np.mean(distance_vertical_nns)
+stats[idx, 20:25] = np.percentile(distance_vertical_nns, [0, 25, 50, 75, 100])
+stats[idx, 25] = np.std(distance_vertical_nns)
 
 theta_nns = theta[mask_nns]
-np.mean(theta_nns)
-np.percentile(theta_nns, [0, 25, 50, 75, 100])
-np.std(theta_nns)
+stats[idx, 26] = np.mean(theta_nns)
+stats[idx, 26:31] = np.percentile(theta_nns, [0, 25, 50, 75, 100])
+stats[idx, 31] = np.std(theta_nns)
