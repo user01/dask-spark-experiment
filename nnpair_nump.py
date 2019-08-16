@@ -105,46 +105,46 @@ def pick_points(sequence, points, api_ids, mds, threshold:float):
         distance, point = closests_pt(points[idx], vs[mask_for_segments], ws[mask_for_segments])
         if distance <= threshold:
             results[idx] = np.array([
-                api_ids[idx],
-                distance,
-                mds[idx],
-                point[0],
-                point[1],
-                point[2],
-                points[idx][0],
-                points[idx][1],
-                points[idx][2],
+                api_ids[idx],   # 0
+                distance,       # 1
+                mds[idx],       # 2
+                point[0],       # 3
+                point[1],       # 4
+                point[2],       # 5
+                points[idx][0], # 6
+                points[idx][1], # 7
+                points[idx][2], # 8
             ])
     return results[results[:, 0] > -1]
-
-
-x_ = np.linspace(-2., 7., 40)
-
-points = []
-for x in x_:
-    for y in x_:
-        for z in x_:
-            points.append((x,y,z))
-points = np.stack(points)
-
-mds = np.random.RandomState(451).randn(points.shape[0])
-sequence = np.array([
-    [0,0,0],
-    [0,1,0],
-    [0,2,1],
-    [0,3,4],
-    [1,4,5],
-])
-
-# vector style
-np.stack([sequence[idx:idx+2] for idx in range(sequence.shape[0] - 1)]).reshape(-1, 3).tolist()
-
-# points.shape
-%timeit pick_points(sequence=sequence.astype(np.float64), mds=mds, api_ids=mds, points=points.astype(np.float64), threshold=1.5)
-# res = pick_points.py_func(sequence=sequence.astype(np.float64), mds=mds, api_ids=mds, points=points.astype(np.float64), threshold=1.5)
-# %timeit pick_points.py_func(sequence=sequence.astype(np.float64), mds=mds, points=points.astype(np.float64), threshold=1.5)
-# # results = pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
-# # results = pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
+#
+#
+# x_ = np.linspace(-2., 7., 40)
+#
+# points = []
+# for x in x_:
+#     for y in x_:
+#         for z in x_:
+#             points.append((x,y,z))
+# points = np.stack(points)
+#
+# mds = np.random.RandomState(451).randn(points.shape[0])
+# sequence = np.array([
+#     [0,0,0],
+#     [0,1,0],
+#     [0,2,1],
+#     [0,3,4],
+#     [1,4,5],
+# ])
+#
+# # vector style
+# np.stack([sequence[idx:idx+2] for idx in range(sequence.shape[0] - 1)]).reshape(-1, 3).tolist()
+#
+# # points.shape
+# %timeit pick_points(sequence=sequence.astype(np.float64), mds=mds, api_ids=mds, points=points.astype(np.float64), threshold=1.5)
+# # res = pick_points.py_func(sequence=sequence.astype(np.float64), mds=mds, api_ids=mds, points=points.astype(np.float64), threshold=1.5)
+# # %timeit pick_points.py_func(sequence=sequence.astype(np.float64), mds=mds, points=points.astype(np.float64), threshold=1.5)
+# # # results = pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
+# # # results = pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
 
 apis = pd.read_parquet('apis.pq')
 coordinates = pd.read_parquet('coordinates.pq')
@@ -155,7 +155,15 @@ api_mapping = spi_mapping[['API', 'API_ID']]
 wbts_api_ids = apis.merge(api_mapping)['API_ID'].values.astype(np.float64)
 
 # coordinates.merge(api_mapping).head(2)
-coordinates_np = coordinates.merge(api_mapping)[['API_ID', 'MD', 'X', 'Y', 'Z']].values.astype(np.float64)
+coordinates_np = coordinates.merge(
+    spi_mapping[['API_ID', 'API', 'PerfFrom', 'PerfTo']]
+).pipe(
+    lambda idf: idf[
+        (idf['MD'] >= idf['PerfFrom']) & (idf['MD'] <= idf['PerfTo'])
+    ]
+)[
+    ['API_ID', 'MD', 'X', 'Y', 'Z']
+].values.astype(np.float64)
 wbts_api_id = wbts_api_ids[0]
 wbt_mask = coordinates_np[:, 0] == wbts_api_id
 coordinates_wbt = coordinates_np[wbt_mask, :]
@@ -163,32 +171,42 @@ coordinates_other = coordinates_np[~wbt_mask, :]
 
 
 xyz_sequence = rdp(coordinates_wbt[:, 2:], 15)
+xyz_sequence.round(2).tolist()
 
 apis_others = coordinates_other[:, 0]
 md_others = coordinates_other[:, 1]
 xyz_other = coordinates_other[:, 2:]
-# xyz_sequence.flags
-# %timeit np.ascontiguousarray(xyz_sequence)
+
+# # rdp(xyz_other[apis_others == 0.0], 15)
+# rdp(xyz_other[apis_others == 4.0], 15)
+# # xyz_sequence.flags
+# # %timeit np.ascontiguousarray(xyz_sequence)
 
 results = pick_points(
     sequence=np.ascontiguousarray(xyz_sequence),
     mds=np.ascontiguousarray(md_others),
     api_ids=np.ascontiguousarray(apis_others),
     points=np.ascontiguousarray(xyz_other),
-    threshold=914,
+    threshold=914.0,
 )
 # %timeit pick_points(sequence=np.ascontiguousarray(xyz_sequence), mds=np.ascontiguousarray(md_others), api_ids=np.ascontiguousarray(apis_others),points=np.ascontiguousarray(xyz_other),threshold=914,)
 # %timeit pick_points(sequence=np.ascontiguousarray(xyz_sequence), mds=md_others, api_ids=apis_others, points=np.ascontiguousarray(xyz_other),threshold=914,)
 # pick_points(sequence=np.ascontiguousarray(xyz_sequence), mds=md_others, api_ids=apis_others,points=np.ascontiguousarray(xyz_other), threshold=914,)
 # %timeit pick_points.py_func(sequence=np.ascontiguousarray(xyz_sequence),mds=np.ascontiguousarray(md_others),api_ids=np.ascontiguousarray(apis_others),points=np.ascontiguousarray(xyz_other),threshold=914,)
-results.shape
-np.unique(results[:, 0])
+# results.shape
+
+# vector style outputs
+results[results[:, 0] == 4, 3:9].reshape(-1, 3).round(0).tolist()
+
+
+# results[:2,3:9]
+# print(json.dumps(results[:,3:9].reshape(-1,3).round(0).tolist()))
+# np.unique(results[:, 0])
 
 # results = pick_points(sequence=sequence.astype(np.float64), mds=mds, points=points.astype(np.float64), threshold=914)
 # print(json.dumps(results[:, -3:].round(2).tolist()))
 
 
-spi_mapping.dtypes
 spi_values = spi_mapping[['API_ID', 'X', 'Y', 'Z', 'X_East', 'Y_East', 'Z_East', 'X_North', 'Y_North', 'Z_North', ]].values
 
 spi_value = spi_values[spi_values[:, 0] == wbts_api_id][0]
@@ -234,15 +252,10 @@ distance_2d = (distance_3d ** 2 - distance_vertical ** 2) ** 0.5
 
 # Returns api_id, distance (m), md (m), wbt_pt(xyz), nns_pt(xyz)
 
-# def _plane_masks(pts_plane, pts_forward, pts_test):
-#     normals = pts_forward - pts_plane
-#     correct_side_signs = np_dot(pts_forward - pts_plane, normals, axis=1)
-#     diff = pts_test.reshape(-1, 1, 3) - pts_plane.reshape(1, -1, 3)
-#     masks = np_dot(diff, normals.reshape(1, -1, 3), axis=2) * correct_side_signs.reshape(1, -1) >= 0
-#     return masks
-
 local_up_unit
-lateral = nns_toe_xyz - nns_heel_xyz
+wbt_heel_xyz = xyz_sequence[0]
+wbt_toe_xyz = xyz_sequence[-1]
+lateral = wbt_toe_xyz - wbt_heel_xyz
 lateral_unit = lateral / np.linalg.norm(lateral)
 lateral_normal = np.cross(lateral_unit, local_up_unit)
 correct_side_sign = np.dot(lateral_normal, lateral_normal)
@@ -250,15 +263,20 @@ correct_side_sign = np.dot(lateral_normal, lateral_normal)
 # the correct side is the 'right' side. funny, right?
 
 nns_ids = np.unique(results[:, 0])
-for nns_id in nns_ids:
+stats = np.ones((nns_ids.shape[0], 32))
+
+for idx, nns_id in enumerate(nns_ids):
     break
 
+stats[idx, 0] = wbts_api_id
+stats[idx, 1] = nns_id
 mask_nns = results[:, 0] == nns_id
 results_nns = results[mask_nns]
-results_nns[:, 2]
+# results_nns[:, 2]
 
 # md diffs
 distance = results_nns[-1, 2] - results_nns[0, 2]
+stats[idx, 2] = distance
 
 nns_heel_xyz = results[0, 6:9]
 nns_toe_xyz = results[-1, 6:9]
@@ -269,6 +287,8 @@ nns_toe_xyz = results[-1, 6:9]
 # 2.0 == left
 sidenns_heel = 1.0 if np.dot(lateral_normal, nns_heel_xyz) > 0 else 2.0
 sidenns_toe = 1.0 if np.dot(lateral_normal, nns_toe_xyz) > 0 else 2.0
+stats[idx, 3] = sidenns_heel
+stats[idx, 4] = sidenns_toe
 
 distance_2d_nns = distance_2d[mask_nns]
 np.mean(distance_2d_nns)
@@ -277,46 +297,15 @@ np.mean(distance_2d_nns)
 
 distance_3d_nns = distance_3d[mask_nns]
 np.mean(distance_3d_nns)
+np.std(distance_3d_nns)
 np.percentile(distance_3d_nns, [0, 25, 50, 75, 100])
-np.mean(distance_3d_nns)
 
 distance_vertical_nns = distance_vertical[mask_nns]
 np.mean(distance_vertical_nns)
 np.percentile(distance_vertical_nns, [0, 25, 50, 75, 100])
-np.mean(distance_vertical_nns)
+np.std(distance_vertical_nns)
 
 theta_nns = theta[mask_nns]
 np.mean(theta_nns)
 np.percentile(theta_nns, [0, 25, 50, 75, 100])
-np.mean(theta_nns)
-
-
-# min
-# 25percentile
-# 50percentile
-# 75percentile
-# max
-np.percentile(distance_2d, [0, 25, 50, 75, 100])
-np.mean(distance_2d)
-np.std(distance_2d)
-
-
-# would need to know up vector
-
-# distance_3d
-# distance_2d
-# distance_vertical
-# theta
-
-# mean
-# std
-# min
-# 25percentile
-# 50percentile
-# 75percentile
-0
-# RDP the WBT sequence
-# find planes for the segments
-# find the masks for all the segments
-# or for each nns point, find the relevant segments
-# then for every segment, find the closest point
+np.std(theta_nns)
