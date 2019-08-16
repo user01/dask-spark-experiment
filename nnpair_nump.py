@@ -146,9 +146,13 @@ def pick_points(sequence, points, api_ids, mds, threshold:float):
 # # # results = pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
 # # # results = pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
 
+# read local data
 apis = pd.read_parquet('apis.pq')
 coordinates = pd.read_parquet('coordinates.pq')
 spi = pd.read_parquet('spi.pq')
+
+
+# pandas building
 spi_mapping = spi.reset_index().rename(columns={'index':'API_ID'})
 api_mapping = spi_mapping[['API', 'API_ID']]
 
@@ -164,23 +168,22 @@ coordinates_np = coordinates.merge(
 )[
     ['API_ID', 'MD', 'X', 'Y', 'Z']
 ].values.astype(np.float64)
+spi_values = spi_mapping[
+    ['API_ID', 'X', 'Y', 'Z', 'X_East', 'Y_East', 'Z_East', 'X_North', 'Y_North', 'Z_North']
+].values
+
+# NOTE: Loop through the ids
 wbts_api_id = wbts_api_ids[0]
+
 wbt_mask = coordinates_np[:, 0] == wbts_api_id
 coordinates_wbt = coordinates_np[wbt_mask, :]
 coordinates_other = coordinates_np[~wbt_mask, :]
-
-
 xyz_sequence = rdp(coordinates_wbt[:, 2:], 15)
-xyz_sequence.round(2).tolist()
+# xyz_sequence.round(2).tolist()
 
 apis_others = coordinates_other[:, 0]
 md_others = coordinates_other[:, 1]
 xyz_other = coordinates_other[:, 2:]
-
-# # rdp(xyz_other[apis_others == 0.0], 15)
-# rdp(xyz_other[apis_others == 4.0], 15)
-# # xyz_sequence.flags
-# # %timeit np.ascontiguousarray(xyz_sequence)
 
 results = pick_points(
     sequence=np.ascontiguousarray(xyz_sequence),
@@ -190,25 +193,12 @@ results = pick_points(
     threshold=914.0,
 )
 # %timeit pick_points(sequence=np.ascontiguousarray(xyz_sequence), mds=np.ascontiguousarray(md_others), api_ids=np.ascontiguousarray(apis_others),points=np.ascontiguousarray(xyz_other),threshold=914,)
-# %timeit pick_points(sequence=np.ascontiguousarray(xyz_sequence), mds=md_others, api_ids=apis_others, points=np.ascontiguousarray(xyz_other),threshold=914,)
-# pick_points(sequence=np.ascontiguousarray(xyz_sequence), mds=md_others, api_ids=apis_others,points=np.ascontiguousarray(xyz_other), threshold=914,)
-# %timeit pick_points.py_func(sequence=np.ascontiguousarray(xyz_sequence),mds=np.ascontiguousarray(md_others),api_ids=np.ascontiguousarray(apis_others),points=np.ascontiguousarray(xyz_other),threshold=914,)
-# results.shape
 
 # vector style outputs
-results[results[:, 0] == 4, 3:9].reshape(-1, 3).round(0).tolist()
+if False:
+    results[results[:, 0] == 4, 3:9].reshape(-1, 3).round(0).tolist()
 
-
-# results[:2,3:9]
-# print(json.dumps(results[:,3:9].reshape(-1,3).round(0).tolist()))
-# np.unique(results[:, 0])
-
-# results = pick_points(sequence=sequence.astype(np.float64), mds=mds, points=points.astype(np.float64), threshold=914)
-# print(json.dumps(results[:, -3:].round(2).tolist()))
-
-
-spi_values = spi_mapping[['API_ID', 'X', 'Y', 'Z', 'X_East', 'Y_East', 'Z_East', 'X_North', 'Y_North', 'Z_North', ]].values
-
+# Compute the common WBT values
 spi_value = spi_values[spi_values[:, 0] == wbts_api_id][0]
 wellhead = spi_value[1:4]
 east = spi_value[4:7]
@@ -219,16 +209,9 @@ local_up = np.cross(east_delta, north_delta)
 
 local_up_len = np.linalg.norm(local_up)
 local_up_unit = local_up / local_up_len
-# distance, md = results[0, :2]
-# wbt = results[0:4, 2:5]
-# nns = results[0:4, 5:8]
 
-
-# distance_segment = nns['NNS_MD'].max() - nns['NNS_MD'].min()
 wbt = results[:, 3:6]
 nns = results[:, 6:9]
-# wbt = np.array([[0,1,0]])
-# nns = np.array([[2,4,0]])
 delta = nns - wbt
 distance_3d = np.linalg.norm(delta, axis=1)
 distance_3d_valid = distance_3d > 1e-9
@@ -252,7 +235,6 @@ distance_2d = (distance_3d ** 2 - distance_vertical ** 2) ** 0.5
 
 # Returns api_id, distance (m), md (m), wbt_pt(xyz), nns_pt(xyz)
 
-local_up_unit
 wbt_heel_xyz = xyz_sequence[0]
 wbt_toe_xyz = xyz_sequence[-1]
 lateral = wbt_toe_xyz - wbt_heel_xyz
@@ -263,49 +245,46 @@ correct_side_sign = np.dot(lateral_normal, lateral_normal)
 # the correct side is the 'right' side. funny, right?
 
 nns_ids = np.unique(results[:, 0])
-stats = np.ones((nns_ids.shape[0], 37)) * -50
+stats = np.ones((nns_ids.shape[0], 32)) * -50
 
 for idx, nns_id in enumerate(nns_ids):
-    break
+    stats[idx, 0] = wbts_api_id
+    stats[idx, 1] = nns_id
+    mask_nns = results[:, 0] == nns_id
+    results_nns = results[mask_nns]
 
-stats[idx, 0] = wbts_api_id
-stats[idx, 1] = nns_id
-mask_nns = results[:, 0] == nns_id
-results_nns = results[mask_nns]
-# results_nns[:, 2]
+    # md diffs
+    distance = results_nns[-1, 2] - results_nns[0, 2]
+    stats[idx, 2] = distance
 
-# md diffs
-distance = results_nns[-1, 2] - results_nns[0, 2]
-stats[idx, 2] = distance
+    nns_heel_xyz = results[0, 6:9]
+    nns_toe_xyz = results[-1, 6:9]
+    # the vector 'shadow' on the right facing normal is the distance from the
+    # lateral plane, the plane that touches the heel, toe, and a position up
+    # up being determined by the wellhead
+    # 1.0 == right
+    # 2.0 == left
+    sidenns_heel = 1.0 if np.dot(lateral_normal, nns_heel_xyz) > 0 else 2.0
+    sidenns_toe = 1.0 if np.dot(lateral_normal, nns_toe_xyz) > 0 else 2.0
+    stats[idx, 3] = sidenns_heel
+    stats[idx, 4] = sidenns_toe
 
-nns_heel_xyz = results[0, 6:9]
-nns_toe_xyz = results[-1, 6:9]
-# the vector 'shadow' on the right facing normal is the distance from the
-# lateral plane, the plane that touches the heel, toe, and a position up
-# up being determined by the wellhead
-# 1.0 == right
-# 2.0 == left
-sidenns_heel = 1.0 if np.dot(lateral_normal, nns_heel_xyz) > 0 else 2.0
-sidenns_toe = 1.0 if np.dot(lateral_normal, nns_toe_xyz) > 0 else 2.0
-stats[idx, 3] = sidenns_heel
-stats[idx, 4] = sidenns_toe
+    distance_2d_nns = distance_2d[mask_nns]
+    stats[idx, 5] = np.mean(distance_2d_nns)
+    stats[idx, 6:11] = np.percentile(distance_2d_nns, [0, 25, 50, 75, 100])
+    stats[idx, 11] = np.std(distance_2d_nns)
 
-distance_2d_nns = distance_2d[mask_nns]
-stats[idx, 5] = np.mean(distance_2d_nns)
-stats[idx, 6:11] = np.percentile(distance_2d_nns, [0, 25, 50, 75, 100])
-stats[idx, 11] = np.std(distance_2d_nns)
+    distance_3d_nns = distance_3d[mask_nns]
+    stats[idx, 12] = np.mean(distance_3d_nns)
+    stats[idx, 13:18] = np.percentile(distance_3d_nns, [0, 25, 50, 75, 100])
+    stats[idx, 18] = np.std(distance_3d_nns)
 
-distance_3d_nns = distance_3d[mask_nns]
-stats[idx, 12] = np.mean(distance_3d_nns)
-stats[idx, 13:18] = np.percentile(distance_3d_nns, [0, 25, 50, 75, 100])
-stats[idx, 18] = np.std(distance_3d_nns)
+    distance_vertical_nns = distance_vertical[mask_nns]
+    stats[idx, 19] = np.mean(distance_vertical_nns)
+    stats[idx, 20:25] = np.percentile(distance_vertical_nns, [0, 25, 50, 75, 100])
+    stats[idx, 25] = np.std(distance_vertical_nns)
 
-distance_vertical_nns = distance_vertical[mask_nns]
-stats[idx, 19] = np.mean(distance_vertical_nns)
-stats[idx, 20:25] = np.percentile(distance_vertical_nns, [0, 25, 50, 75, 100])
-stats[idx, 25] = np.std(distance_vertical_nns)
-
-theta_nns = theta[mask_nns]
-stats[idx, 26] = np.mean(theta_nns)
-stats[idx, 26:31] = np.percentile(theta_nns, [0, 25, 50, 75, 100])
-stats[idx, 31] = np.std(theta_nns)
+    theta_nns = theta[mask_nns]
+    stats[idx, 26] = np.mean(theta_nns)
+    stats[idx, 26:31] = np.percentile(theta_nns, [0, 25, 50, 75, 100])
+    stats[idx, 31] = np.std(theta_nns)
