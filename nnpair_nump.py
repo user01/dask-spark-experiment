@@ -225,8 +225,8 @@ local_up_unit = local_up / local_up_len
 
 
 # distance_segment = nns['NNS_MD'].max() - nns['NNS_MD'].min()
-wbt = results[:, 2:5]
-nns = results[:, 5:8]
+wbt = results[:, 3:6]
+nns = results[:, 6:9]
 # wbt = np.array([[0,1,0]])
 # nns = np.array([[2,4,0]])
 delta = nns - wbt
