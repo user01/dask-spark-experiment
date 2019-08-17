@@ -511,15 +511,17 @@ spi_values = spi_mapping[
 
 # %timeit nnpairs(wbts_api_ids.astype(np.float32), coordinates_np.astype(np.float32), spi_values.astype(np.float32), threshold=914.0)
 
-vectors_np, stats_np = nnpairs(wbts_api_ids.astype(np.float32), coordinates_np.astype(np.float32), spi_values.astype(np.float32), threshold=914.0)
-
+vectors_np, stats_np = nnpairs(
+    wbts_api_ids.astype(np.float32),
+    coordinates_np.astype(np.float32),
+    spi_values.astype(np.float32),
+    threshold=914.0,
+)
 
 
 
 
 from scipy.interpolate import interp1d
-
-
 
 def interpolate_points(coordinates, distance_max=12):
     """Rebuild coordinates set ensuring no point is more than distance_max units
@@ -554,14 +556,12 @@ def interpolate_points(coordinates, distance_max=12):
 
     return coors_inter
 
-
 def interpolate_points_all(coordinates, distance_max=12):
     """Interpolate points for all APIs"""
     return pd.concat([
         interpolate_points(wbt, distance_max)
         for api, wbt in coordinates.groupby('API', as_index=False)
     ], sort=True).reset_index(drop=True)
-
 
 def spread_points(mds_orig, spread=12):
     """
