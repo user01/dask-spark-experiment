@@ -28,7 +28,7 @@ from numba import jit
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-@jit(nopython=True, fastmath=True)
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def pldist(point, start, end):
     """
     Calculates the distance from ``point`` to the line given
@@ -65,7 +65,7 @@ def pldist(point, start, end):
 # pldist(np.array([2,1.]),np.array([0,0.]),np.array([1,0.]))
 
 
-@jit(nopython=True, fastmath=True)
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def _rdp_iter(M, start_index, last_index, epsilon):
     stk = []
     stk.append([start_index, last_index])
@@ -95,7 +95,7 @@ def _rdp_iter(M, start_index, last_index, epsilon):
     return indices
 
 
-@jit(nopython=True, fastmath=True)
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def rdp_iter(M, epsilon):
     """
     Simplifies a given array of points.
@@ -114,7 +114,7 @@ def rdp_iter(M, epsilon):
     mask = rdp_mask(M, epsilon)
     return M[mask]
 
-@jit(nopython=True, fastmath=True)
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def rdp_mask(M, epsilon):
     """
     Simplifies a given array of points.
@@ -137,12 +137,12 @@ def rdp_mask(M, epsilon):
 # #############################################################################
 
 
-@jit(nopython=True, fastmath=True)
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def np_dot(x, y, axis=1):
     return np.sum(x * y, axis=axis)
 
 
-@jit(nopython=True, fastmath=True)
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def plane_masks(normals, pts_plane, pts_forward, pts_test):
     correct_side_signs = np_dot(pts_forward - pts_plane, normals, axis=1)
     diff = pts_test.reshape(-1, 1, 3) - pts_plane.reshape(1, -1, 3)
@@ -150,7 +150,7 @@ def plane_masks(normals, pts_plane, pts_forward, pts_test):
     return masks
 
 
-@jit(nopython=True, fastmath=True)
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def _plane_masks(pts_plane, pts_forward, pts_test):
     normals = pts_forward - pts_plane
     correct_side_signs = np_dot(pts_forward - pts_plane, normals, axis=1)
@@ -159,7 +159,7 @@ def _plane_masks(pts_plane, pts_forward, pts_test):
     return masks
 
 
-@jit(nopython=True, fastmath=True)
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def generate_all_masks(sequence, pts_test):
     assert pts_test.shape[1] == 3
     # need to compute ahead masks and behind masks
@@ -192,7 +192,7 @@ def generate_all_masks(sequence, pts_test):
     return mask_points_per_segment
 
 
-@jit(nopython=True, fastmath=True)
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def closests_pt(p, a_s, b_s):
     """Find the closest point on segments to the point"""
     # given multiple segments, pick the closest point on any to the point p
@@ -223,7 +223,7 @@ def closests_pt(p, a_s, b_s):
     return smallest_distance, best_point
 
 
-@jit(nopython=True, fastmath=True)
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def pick_points(sequence, points, api_ids, mds, threshold: float):
     """
     Returns api_id, distance (m), md (m), wbt_pt(xyz), nns_pt(xyz)
@@ -288,7 +288,7 @@ def pick_points(sequence, points, api_ids, mds, threshold: float):
 # # # results = pick_points(sequence=sequence.astype(np.float64), points=points.astype(np.float64), threshold=1.5)
 
 
-@jit(nopython=True, fastmath=True)
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def np_cross(a, b):
     """
     Simple numba compatible cross product of vectors
@@ -304,7 +304,7 @@ def np_cross(a, b):
 # np.allclose(np.cross(a, b), np_cross(a, b))
 
 
-@jit(nopython=True, fastmath=True)
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def np_linalg_norm(data, axis=0):
     """
     Simple numba compatible cross product of vectors
@@ -321,7 +321,7 @@ def np_linalg_norm(data, axis=0):
 # np.allclose(np_linalg_norm(data), np.linalg.norm(data, axis=1))
 # np.allclose(np_linalg_norm(np.array([3,4,0])), 5)
 
-@jit(nopython=True, fastmath=True)
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def np_clip(arr, a_min, a_max):
     lower = np.where(arr < a_min, a_min, arr)
     upper = np.where(lower > a_max, a_max, lower)
@@ -345,7 +345,7 @@ def np_clip(arr, a_min, a_max):
 
 
 
-@jit(nopython=True, fastmath=True)
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def nnpairs(wbts_api_ids, coordinates_np, spi_values, threshold: float = 914.0):
     vectors_lst = []
     stats_lst = []
