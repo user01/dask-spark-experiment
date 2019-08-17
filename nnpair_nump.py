@@ -1,9 +1,7 @@
 import pandas as pd
 import numpy as np
 import json
-from rdp import rdp_iter as rdp
 from numba import jit
-from numba.decorators import autojit
 
 # #############################################################################
 
