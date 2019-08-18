@@ -6,3 +6,4 @@ __pycache__/*
 scheduler.json
 dask-worker-space/
 node_modules/
+spark-2.4.2-bin-hadoop2.7/*
