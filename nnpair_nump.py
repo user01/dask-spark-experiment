@@ -407,24 +407,17 @@ def nnpairs(wbts_api_ids, coordinates_np, spi_values, threshold: float = 914.0):
     vectors_lst = []
     stats_lst = []
     for wbts_api_id in wbts_api_ids:
-
-        wbt_mask = coordinates_np[:, 0] == wbts_api_id
-        coordinates_wbt = coordinates_np[wbt_mask, :]
-        coordinates_other = coordinates_np[~wbt_mask, :]
-        xyz_sequence = rdp_iter(coordinates_wbt[:, 2:], 15)
-
-        # TODO: Limit the others based on min/max boxes
-        apis_others = coordinates_other[:, 0]
-        md_others = coordinates_other[:, 1]
-        xyz_other = coordinates_other[:, 2:]
+        sequence, mds, api_ids, points = wbt_coordinate_prepare(wbts_api_id, coordinates_np)
 
         vectors = pick_points(
-            sequence=np.ascontiguousarray(xyz_sequence),
-            mds=np.ascontiguousarray(md_others),
-            api_ids=np.ascontiguousarray(apis_others),
-            points=np.ascontiguousarray(xyz_other),
+            sequence=sequence,
+            mds=mds,
+            api_ids=api_ids,
+            points=points,
             threshold=threshold,
-        ).astype(np.float32)
+        ).astype(
+            np.float32
+        )
 
         vectors_lst.append(vectors)
 
@@ -461,8 +454,8 @@ def nnpairs(wbts_api_ids, coordinates_np, spi_values, threshold: float = 914.0):
 
         # Returns api_id, distance (m), md (m), wbt_pt(xyz), nns_pt(xyz)
 
-        wbt_heel_xyz = xyz_sequence[0]
-        wbt_toe_xyz = xyz_sequence[-1]
+        wbt_heel_xyz = sequence[0]
+        wbt_toe_xyz = sequence[-1]
         lateral = wbt_toe_xyz - wbt_heel_xyz
         lateral_unit = lateral / np_linalg_norm(lateral)
         lateral_normal = np_cross(lateral_unit, local_up_unit)
