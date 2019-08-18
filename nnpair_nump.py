@@ -376,14 +376,14 @@ def np_clip(arr, a_min, a_max):
 
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
-def wbt_coordinate_prepare(wbts_api_id, coordinates_np):
+def wbt_coordinate_prepare(wbts_api_id, coordinates_np, epsilon):
     """
     Prepare the coordinates for processing
     """
     wbt_mask = coordinates_np[:, 0] == wbts_api_id
     coordinates_wbt = coordinates_np[wbt_mask, :]
     coordinates_other = coordinates_np[~wbt_mask, :]
-    xyz_sequence = rdp_iter(coordinates_wbt[:, 2:], 15)
+    xyz_sequence = rdp_iter(coordinates_wbt[:, 2:], epsilon=epsilon)
 
     # TODO: Limit the others based on min/max boxes
     apis_others = coordinates_other[:, 0]
