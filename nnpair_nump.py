@@ -376,6 +376,29 @@ def np_clip(arr, a_min, a_max):
 
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
+def wbt_coordinate_prepare(wbts_api_id, coordinates_np):
+    """
+    Prepare the coordinates for processing
+    """
+    wbt_mask = coordinates_np[:, 0] == wbts_api_id
+    coordinates_wbt = coordinates_np[wbt_mask, :]
+    coordinates_other = coordinates_np[~wbt_mask, :]
+    xyz_sequence = rdp_iter(coordinates_wbt[:, 2:], 15)
+
+    # TODO: Limit the others based on min/max boxes
+    apis_others = coordinates_other[:, 0]
+    md_others = coordinates_other[:, 1]
+    xyz_other = coordinates_other[:, 2:]
+
+    return (
+        np.ascontiguousarray(xyz_sequence),
+        np.ascontiguousarray(md_others),
+        np.ascontiguousarray(apis_others),
+        np.ascontiguousarray(xyz_other),
+    )
+
+
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def nnpairs(wbts_api_ids, coordinates_np, spi_values, threshold: float = 914.0):
     """
     Calculate the pairwise relationships between WBTs and NNs
