@@ -5,7 +5,7 @@ from numba import jit
 
 # #############################################################################
 
-# Modified from: https://github.com/fhirschmann/rdp
+# Heavily modified from: https://github.com/fhirschmann/rdp
 
 # Copyright (c) 2014 Fabian Hirschmann <fabian@hirschmann.email>
 #
@@ -139,19 +139,29 @@ def rdp_mask(M, epsilon):
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def np_dot(x, y, axis=1):
+    """
+    Axis based dot product of vectors
+    """
     return np.sum(x * y, axis=axis)
 
-
-@jit(nopython=True, fastmath=True, cache=True, parallel=False)
-def plane_masks(normals, pts_plane, pts_forward, pts_test):
-    correct_side_signs = np_dot(pts_forward - pts_plane, normals, axis=1)
-    diff = pts_test.reshape(-1, 1, 3) - pts_plane.reshape(1, -1, 3)
-    masks = np_dot(diff, normals.reshape(1, -1, 3), axis=2) * correct_side_signs.reshape(1, -1) >= 0
-    return masks
+#
+# @jit(nopython=True, fastmath=True, cache=True, parallel=False)
+# def plane_masks(normals, pts_plane, pts_forward, pts_test):
+#     """
+#     """
+#     correct_side_signs = np_dot(pts_forward - pts_plane, normals, axis=1)
+#     diff = pts_test.reshape(-1, 1, 3) - pts_plane.reshape(1, -1, 3)
+#     masks = np_dot(diff, normals.reshape(1, -1, 3), axis=2) * correct_side_signs.reshape(1, -1) >= 0
+#     return masks
 
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def _plane_masks(pts_plane, pts_forward, pts_test):
+    """
+    Given points on the plane, a point forward from the
+    plane (normal via the first), and points to test as forward of the plane,
+    return the mask of points that test as in front
+    """
     normals = pts_forward - pts_plane
     correct_side_signs = np_dot(pts_forward - pts_plane, normals, axis=1)
     diff = pts_test.reshape(-1, 1, 3) - pts_plane.reshape(1, -1, 3)
@@ -161,6 +171,20 @@ def _plane_masks(pts_plane, pts_forward, pts_test):
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def generate_all_masks(sequence, pts_test):
+    """
+    Generate all the masks for the sequence (a series of 3d points)
+    To be 'adjacent' to a segment section, the point must be ahead of the
+    'ahead' planes (ie in front of the starting plane) and behind the 'behind'
+    planes (ie behind the ending plane)
+
+    The planes are both orthogonal (flat capped for just this segment) and
+    bisection (angled between the segment and it's neighboring segment). The
+    orthogonal are always valid, but bisection is only valid when there is a
+    neighboring segment
+
+    If a point is ahead of either ahead planes and behind either behind
+    planes, then the point is adjacent.
+    """
     assert pts_test.shape[1] == 3
     # need to compute ahead masks and behind masks
     # for each there's the orthogonal and the bisection
@@ -194,7 +218,7 @@ def generate_all_masks(sequence, pts_test):
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def closests_pt(p, a_s, b_s):
-    """Find the closest point on segments to the point"""
+    """Find the closest point on series of segments to the point"""
     # given multiple segments, pick the closest point on any to the point p
     assert a_s.shape == b_s.shape
     ab_s = b_s - a_s
@@ -226,6 +250,9 @@ def closests_pt(p, a_s, b_s):
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def pick_points(sequence, points, api_ids, mds, threshold: float):
     """
+    Given a WBT sequence, finds points within the planer masks and finds
+    closest point on WBT
+
     Returns api_id, distance (m), md (m), wbt_pt(xyz), nns_pt(xyz)
     """
     assert points.shape[0] == mds.shape[0]
@@ -323,6 +350,9 @@ def np_linalg_norm(data, axis=0):
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def np_clip(arr, a_min, a_max):
+    """
+    Simple numba compatible clipping of array. Both min and max are required
+    """
     lower = np.where(arr < a_min, a_min, arr)
     upper = np.where(lower > a_max, a_max, lower)
     return upper
@@ -347,6 +377,10 @@ def np_clip(arr, a_min, a_max):
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def nnpairs(wbts_api_ids, coordinates_np, spi_values, threshold: float = 914.0):
+    """
+    Calculate the pairwise relationships between WBTs and NNs
+    Returns the vector relations of nns position to wbt and the derived statistics
+    """
     vectors_lst = []
     stats_lst = []
     for wbts_api_id in wbts_api_ids:
@@ -355,8 +389,8 @@ def nnpairs(wbts_api_ids, coordinates_np, spi_values, threshold: float = 914.0):
         coordinates_wbt = coordinates_np[wbt_mask, :]
         coordinates_other = coordinates_np[~wbt_mask, :]
         xyz_sequence = rdp_iter(coordinates_wbt[:, 2:], 15)
-        # xyz_sequence.round(2).tolist()
 
+        # TODO: Limit the others based on min/max boxes
         apis_others = coordinates_other[:, 0]
         md_others = coordinates_other[:, 1]
         xyz_other = coordinates_other[:, 2:]
@@ -371,7 +405,7 @@ def nnpairs(wbts_api_ids, coordinates_np, spi_values, threshold: float = 914.0):
 
         vectors_lst.append(vectors)
 
-        # # vector style outputs
+        # vector style outputs - use this code to plot in view-points
         # if False:
         #     vectors[vectors[:, 0] == 4, 3:9].reshape(-1, 3).round(0).tolist()
 
@@ -489,6 +523,10 @@ def nnpairs(wbts_api_ids, coordinates_np, spi_values, threshold: float = 914.0):
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def interpolate(coors, segment_length):
+    """
+    Interpolate new points along the coordinate set based on the desired
+    segment length
+    """
     # roughly 10x in numba
     md_min = coors[:,1][0]
     md_max = coors[:,1][-1]
@@ -521,6 +559,9 @@ def interpolate(coors, segment_length):
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def malloc_interpolate_coords(coordinates, segment_length):
+    """
+    Memory Allocation for the newly interpolated coordinates
+    """
     new_size = 0
     for nns_id in np.unique(coordinates[:,0]):
         coors = coordinates[coordinates[:, 0] == nns_id]
@@ -534,6 +575,9 @@ def malloc_interpolate_coords(coordinates, segment_length):
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def interpolate_coords(coordinates, segment_length):
+    """
+    Perform interpolation for all coordinates
+    """
     coords_new = malloc_interpolate_coords(coordinates, segment_length)
     ptr = 0
     for nns_id in np.unique(coordinates[:,0]):
