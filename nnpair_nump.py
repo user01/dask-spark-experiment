@@ -519,100 +519,68 @@ vectors_np, stats_np = nnpairs(
 )
 
 
+segment_length = 15.0
+
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
+def interpolate(coors, segment_length):
+    # roughly 10x in numba
+    md_min = coors[:,1][0]
+    md_max = coors[:,1][-1]
+    approx_count = int((md_max - md_min) / segment_length)
+    mds_new = np.linspace(md_min, md_max, approx_count + 1)
+    pts_new = np.empty((mds_new.shape[0], 5), dtype=np.float32)
+    pts_new[:, 0] = coors[0,0]
+    pts_new[:, 1] = mds_new
+
+    for idx, md in enumerate(mds_new):
+        msk = coors[:,1] <= md
+        data_current = coors[msk,:][-1]
+        point_current = data_current[2:]
+        if msk.all():
+            pts_new[idx, 2:] = point_current
+            break
+        data_next = coors[~msk,:][0]
+        point_next = data_next[2:]
+        md_current = data_current[1]
+        md_next = data_next[1]
+        factor = (md - md_current) / (md_next - md_current)
+        new_point = factor * (point_next - point_current) + point_current
+        pts_new[idx, 2:] = new_point
+
+    return pts_new
 
 
-from scipy.interpolate import interp1d
+# %timeit interpolate.py_func(coors)
+# %timeit interpolate(coors)
 
-def interpolate_points(coordinates, distance_max=12):
-    """Rebuild coordinates set ensuring no point is more than distance_max units
-    from the next point.
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
+def malloc_interpolate_coords(coors, segment_length):
+    new_size = 0
+    for nns_id in np.unique(coordinates_np[:,0]):
+        coors = coordinates_np[coordinates_np[:, 0] == nns_id]
+        md_min = coors[:,1][0]
+        md_max = coors[:,1][-1]
+        new_size += 1 + int((md_max - md_min) / segment_length)
 
-    Note that this finds points more than the distance_max and adds points until
-    the gap is no bigger than distance_max
-
-    An improved version would space out evenly along the segment, each of the
-    distance_max distant
-
-    Linear interpolation form MD
-    Expects np array of [:, 4], X,Y,Z,MD
-    """
-    coors = coordinates.reset_index(drop=True)
-    mds_spread = spread_points(coors['MD'], distance_max)
-
-    if len(mds_spread) < 2:
-        return coors
-
-    f_x = interp1d(coors['MD'], coors['X'], kind='slinear')
-    f_y = interp1d(coors['MD'], coors['Y'], kind='slinear')
-    f_z = interp1d(coors['MD'], coors['Z'], kind='slinear')
-
-    coors_inter = pd.DataFrame({
-        'API': coors['API'].iloc[0],
-        'MD': mds_spread,
-        'X': f_x(mds_spread),
-        'Y': f_y(mds_spread),
-        'Z': f_z(mds_spread),
-    })
-
-    return coors_inter
-
-def interpolate_points_all(coordinates, distance_max=12):
-    """Interpolate points for all APIs"""
-    return pd.concat([
-        interpolate_points(wbt, distance_max)
-        for api, wbt in coordinates.groupby('API', as_index=False)
-    ], sort=True).reset_index(drop=True)
-
-def spread_points(mds_orig, spread=12):
-    """
-    Spread series by adding values to ensure no two values are more than the
-    spread value.
-
-    `[0, 6, 18, 22], 3` -> `[0, 3, 6, 9, 12, 15, 18, 20, 22]`
-
-    Parameters
-    ----------
-    mds_orig : pd.Series
-        Input series with points to be spread. Values must be in asceding order.
-    spread : int
-        Base used to create new points between two values.
-
-    Returns
-    -------
-    pd.Series
-        Output series with new points according to the spread values.
-    """
-
-    mds = []
-    assert np.all(mds_orig.values[:-1] <= mds_orig.values[1:]), f"Series must be in ascending order. Values: {mds_orig.values}"
-    for md_idx in range(0, mds_orig.shape[0] - 1):
-        md = mds_orig[md_idx]
-        md_next = mds_orig[md_idx + 1]
-        md_diff = md_next - md
-
-        extra_points = np.ceil(md_diff / spread)
-
-        gap_size = md_diff / extra_points if extra_points > 0 else 0
-        assert gap_size <= spread, f"Computed gap_size of {gap_size} against spread of {spread} {extra_points}"
-
-        mds.append(md)
-        pt_offsets = (np.arange(1, extra_points) * gap_size) + md
-        mds.extend(pt_offsets)
-    mds.append(mds_orig.iloc[-1])
-    return pd.Series(mds)
+    coords_new = np.empty((new_size, 5), dtype=np.float32)
+    return coords_new
 
 
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
+def interpolate_coords(coors, segment_length):
+    coords_new = malloc_interpolate_coords(coors, segment_length)
+    ptr = 0
+    for nns_id in np.unique(coordinates_np[:,0]):
+        coors = coordinates_np[coordinates_np[:, 0] == nns_id]
+        results = interpolate(coors, segment_length)
+        coords_new[ptr:ptr+results.shape[0],:] = results
+        ptr += results.shape[0]
+    return coords_new
 
 
-f_x = interp1d(np.array([0,1,5,10.0]), np.array([0,1,5,10.0]) * 10, assume_sorted=True)
-f_x(np.arange(10))
-
-@jit(nopython=True, fastmath=True)
-def another():
-    f_x = interp1d(np.array([0,1,5,10.0]), np.array([0,1,5,10.0]) * 10, assume_sorted=True)
-    return f_x(np.arange(10))
-
-another()
+# interpolate_coords(coordinates_np, segment_length=segment_length)
+# %timeit interpolate_coords(coordinates_np, segment_length=segment_length)
+# %timeit interpolate_coords(coordinates_np, segment_length=segment_length)
 
 0
 
