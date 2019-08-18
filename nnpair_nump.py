@@ -399,15 +399,24 @@ def wbt_coordinate_prepare(wbts_api_id, coordinates_np, epsilon):
 
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
-def nnpairs(wbts_api_ids, coordinates_np, spi_values, threshold: float = 914.0):
+def nnpairs(
+    wbts_api_ids: np.array,
+    coordinates: np.array,
+    spi: np.array,
+    threshold: float = 914.0,
+    segment_length: float = 15.0,
+):
     """
     Calculate the pairwise relationships between WBTs and NNs
     Returns the vector relations of nns position to wbt and the derived statistics
+    Works only with float32
     """
+    spi_values = spi.astype(np.float32)
+    coordinates_np = interpolate_coords(coordinates.astype(np.float32), segment_length=segment_length)
     vectors_lst = []
     stats_lst = []
-    for wbts_api_id in wbts_api_ids:
-        sequence, mds, api_ids, points = wbt_coordinate_prepare(wbts_api_id, coordinates_np)
+    for wbts_api_id in wbts_api_ids.astype(np.float32):
+        sequence, mds, api_ids, points = wbt_coordinate_prepare(wbts_api_id, coordinates_np, epsilon=segment_length)
 
         vectors = pick_points(
             sequence=sequence,
@@ -640,10 +649,11 @@ segment_length = 15.0
 # %timeit nnpairs(wbts_api_ids.astype(np.float32), coordinates_np.astype(np.float32), spi_values.astype(np.float32), threshold=914.0)
 
 vectors_np, stats_np = nnpairs(
-    wbts_api_ids.astype(np.float32),
-    interpolate_coords(coordinates_np.astype(np.float32), segment_length=segment_length),
-    spi_values.astype(np.float32),
+    wbts_api_ids,
+    coordinates_np,
+    spi_values,
     threshold=threshold,
+    segment_length=segment_length,
 )
 
 
