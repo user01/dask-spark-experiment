@@ -554,24 +554,24 @@ def interpolate(coors, segment_length):
 # %timeit interpolate(coors)
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
-def malloc_interpolate_coords(coors, segment_length):
+def malloc_interpolate_coords(coordinates, segment_length):
     new_size = 0
-    for nns_id in np.unique(coordinates_np[:,0]):
-        coors = coordinates_np[coordinates_np[:, 0] == nns_id]
+    for nns_id in np.unique(coordinates[:,0]):
+        coors = coordinates[coordinates[:, 0] == nns_id]
         md_min = coors[:,1][0]
         md_max = coors[:,1][-1]
         new_size += 1 + int((md_max - md_min) / segment_length)
 
-    coords_new = np.empty((new_size, 5), dtype=np.float32)
-    return coords_new
+    coordinates_new = np.empty((new_size, 5), dtype=np.float32)
+    return coordinates_new
 
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
-def interpolate_coords(coors, segment_length):
-    coords_new = malloc_interpolate_coords(coors, segment_length)
+def interpolate_coords(coordinates, segment_length):
+    coords_new = malloc_interpolate_coords(coordinates, segment_length)
     ptr = 0
-    for nns_id in np.unique(coordinates_np[:,0]):
-        coors = coordinates_np[coordinates_np[:, 0] == nns_id]
+    for nns_id in np.unique(coordinates[:,0]):
+        coors = coordinates[coordinates[:, 0] == nns_id]
         results = interpolate(coors, segment_length)
         coords_new[ptr:ptr+results.shape[0],:] = results
         ptr += results.shape[0]
