@@ -374,6 +374,51 @@ def np_clip(arr, a_min, a_max):
 # np.allclose(np_clip(arr, a_min=0, a_max=1), expected)
 
 
+# ####################################################################
+
+
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
+def np_min(arr):
+    """
+    np.min across axis 0
+    """
+    # Interestingly, for small sets, this is 5x the default np.min(axis=0)
+    return np.array([arr[:, axis].min() for axis in range(arr.shape[1])], dtype=np.float32)
+
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
+def np_max(arr):
+    """
+    np.max across axis 0
+    """
+    # Interestingly, for small sets, this is 5x the default np.max(axis=0)
+    return np.array([arr[:, axis].max() for axis in range(arr.shape[1])], dtype=np.float32)
+
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
+def relevant_coordinates_mask(api_ids, points, sequence, threshold:float):
+    """
+    Row-wise mask for the apis that are within the simple bounding box
+    for consideration
+    """
+
+    buffer_min = np_min(sequence) - threshold
+    buffer_max = np_max(sequence) + threshold
+    msk = np.zeros(api_ids.shape) <= 0.0
+    for api_id in np.unique(api_ids):
+        msk_current = api_ids == api_id
+        points_api = points[msk_current]
+        local_min = np_min(points_api)
+        if np.any((buffer_min <= local_min) & (local_min <= buffer_max)):
+            msk = msk | msk_current
+            continue
+
+        local_max = np_max(points_api)
+        if np.any((buffer_min <= local_max) & (local_max <= buffer_max)):
+            msk = msk | msk_current
+
+    return msk
+
+# ####################################################################
+
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def wbt_coordinate_prepare(wbts_api_id, coordinates_np, epsilon):
@@ -650,48 +695,6 @@ spi_values = spi_mapping[
 
 threshold = 914.0
 segment_length = 15.0
-# %timeit nnpairs(wbts_api_ids.astype(np.float32), coordinates_np.astype(np.float32), spi_values.astype(np.float32), threshold=914.0)
-
-
-@jit(nopython=True, fastmath=True, cache=True, parallel=False)
-def np_min(arr):
-    """
-    np.min across axis 0
-    """
-    # Interestingly, for small sets, this is 5x the default np.min(axis=0)
-    return np.array([arr[:, axis].min() for axis in range(arr.shape[1])], dtype=np.float32)
-
-@jit(nopython=True, fastmath=True, cache=True, parallel=False)
-def np_max(arr):
-    """
-    np.max across axis 0
-    """
-    # Interestingly, for small sets, this is 5x the default np.max(axis=0)
-    return np.array([arr[:, axis].max() for axis in range(arr.shape[1])], dtype=np.float32)
-
-@jit(nopython=True, fastmath=True, cache=True, parallel=False)
-def relevant_coordinates_mask(api_ids, points, sequence, threshold:float):
-    """
-    Row-wise mask for the apis that are within the simple bounding box
-    for consideration
-    """
-
-    buffer_min = np_min(sequence) - threshold
-    buffer_max = np_max(sequence) + threshold
-    msk = np.zeros(api_ids.shape) <= 0.0
-    for api_id in np.unique(api_ids):
-        msk_current = api_ids == api_id
-        points_api = points[msk_current]
-        local_min = np_min(points_api)
-        if np.any((buffer_min <= local_min) & (local_min <= buffer_max)):
-            msk = msk | msk_current
-            continue
-
-        local_max = np_max(points_api)
-        if np.any((buffer_min <= local_max) & (local_max <= buffer_max)):
-            msk = msk | msk_current
-
-    return msk
 
 vectors_np, stats_np = nnpairs(
     wbts_api_ids,
