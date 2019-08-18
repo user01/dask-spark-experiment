@@ -485,41 +485,7 @@ def nnpairs(wbts_api_ids, coordinates_np, spi_values, threshold: float = 914.0):
 
     return vectors_all, stats_all
 
-
-# read local data
-apis = pd.read_parquet("apis.pq")
-coordinates = pd.read_parquet("coordinates.pq")
-spi = pd.read_parquet("spi.pq")
-
-# pandas building
-spi_mapping = spi.reset_index().rename(columns={"index": "API_ID"})
-api_mapping = spi_mapping[["API", "API_ID"]]
-
-wbts_api_ids = apis.merge(api_mapping)["API_ID"].values.astype(np.float64)
-
-# coordinates.merge(api_mapping).head(2)
-coordinates_np = (
-    coordinates.merge(spi_mapping[["API_ID", "API", "PerfFrom", "PerfTo"]])
-    .pipe(lambda idf: idf[(idf["MD"] >= idf["PerfFrom"]) & (idf["MD"] <= idf["PerfTo"])])[
-        ["API_ID", "MD", "X", "Y", "Z"]
-    ]
-    .values.astype(np.float64)
-)
-spi_values = spi_mapping[
-    ["API_ID", "X", "Y", "Z", "X_East", "Y_East", "Z_East", "X_North", "Y_North", "Z_North"]
-].values
-
-# %timeit nnpairs(wbts_api_ids.astype(np.float32), coordinates_np.astype(np.float32), spi_values.astype(np.float32), threshold=914.0)
-
-vectors_np, stats_np = nnpairs(
-    wbts_api_ids.astype(np.float32),
-    coordinates_np.astype(np.float32),
-    spi_values.astype(np.float32),
-    threshold=914.0,
-)
-
-
-segment_length = 15.0
+# ##################################################################
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
 def interpolate(coors, segment_length):
@@ -581,6 +547,45 @@ def interpolate_coords(coordinates, segment_length):
 # interpolate_coords(coordinates_np, segment_length=segment_length)
 # %timeit interpolate_coords(coordinates_np, segment_length=segment_length)
 # %timeit interpolate_coords(coordinates_np, segment_length=segment_length)
+
+
+# #############################################################
+
+
+# read local data
+apis = pd.read_parquet("apis.pq")
+coordinates = pd.read_parquet("coordinates.pq")
+spi = pd.read_parquet("spi.pq")
+
+# pandas building
+spi_mapping = spi.reset_index().rename(columns={"index": "API_ID"})
+api_mapping = spi_mapping[["API", "API_ID"]]
+
+wbts_api_ids = apis.merge(api_mapping)["API_ID"].values.astype(np.float64)
+
+# coordinates.merge(api_mapping).head(2)
+coordinates_np = (
+    coordinates.merge(spi_mapping[["API_ID", "API", "PerfFrom", "PerfTo"]])
+    .pipe(lambda idf: idf[(idf["MD"] >= idf["PerfFrom"]) & (idf["MD"] <= idf["PerfTo"])])[
+        ["API_ID", "MD", "X", "Y", "Z"]
+    ]
+    .values.astype(np.float64)
+)
+spi_values = spi_mapping[
+    ["API_ID", "X", "Y", "Z", "X_East", "Y_East", "Z_East", "X_North", "Y_North", "Z_North"]
+].values
+
+threshold = 914.0
+segment_length = 15.0
+# %timeit nnpairs(wbts_api_ids.astype(np.float32), coordinates_np.astype(np.float32), spi_values.astype(np.float32), threshold=914.0)
+
+vectors_np, stats_np = nnpairs(
+    wbts_api_ids.astype(np.float32),
+    interpolate_coords(coordinates_np.astype(np.float32), segment_length=segment_length),
+    spi_values.astype(np.float32),
+    threshold=threshold,
+)
+
 
 0
 
