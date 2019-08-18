@@ -558,8 +558,8 @@ def interpolate(coors, segment_length):
     approx_count = int((md_max - md_min) / segment_length)
     mds_new = np.linspace(md_min, md_max, approx_count + 1)
     pts_new = np.empty((mds_new.shape[0], 5), dtype=np.float32)
-    pts_new[:, 0] = coors[0,0]
-    pts_new[:, 1] = mds_new
+    pts_new[:, 0] = coors[0,0] # assign the id to the new points
+    pts_new[:, 1] = mds_new # assign the interpolated measure depths
 
     for idx, md in enumerate(mds_new):
         msk = coors[:,1] <= md
