@@ -778,6 +778,7 @@ spi_values = spi_mapping[
     ["API_ID", "X", "Y", "Z", "X_East", "Y_East", "Z_East", "X_North", "Y_North", "Z_North", 'Vector_Cos_Angle_Lat']
 ].values
 
+
 threshold = 914.0
 segment_length = 15.0
 
@@ -789,6 +790,9 @@ vectors_np, stats_np = nnpairs(
     segment_length=segment_length,
 )
 
+vectors_blanker = blank_vectors()
+stats_blanker = blank_stats()
+
 vector_results = pd.DataFrame(
     vectors_np.astype(np.float64),
     columns=['WBT', 'NNS', 'NNS_MD', 'Distance', 'WBT_X', 'WBT_Y', 'WBT_Z', 'NNS_X', 'NNS_Y', 'NNS_Z'],
@@ -797,6 +801,19 @@ vector_results = pd.DataFrame(
     NNS=lambda idf: idf[['NNS']].astype(np.int64).merge(api_mapping, how='left', left_on='NNS', right_on='API_ID')['API'],
 )
 assert vectors_blanker.dtypes.equals(vector_results.dtypes)
+
+
+stats_results = pd.DataFrame(
+    stats_np.astype(np.float64),
+    columns=['NNS', 'WBT', 'distance_segment', 'azimuth_delta', 'sidenns_heel', 'sidenns_toe', 'distance_2d_mean', 'distance_2d_std', 'distance_2d_min', 'distance_2d_25percentile', 'distance_2d_50percentile', 'distance_2d_75percentile', 'distance_2d_max', 'distance_3d_mean', 'distance_3d_std', 'distance_3d_min', 'distance_3d_25percentile', 'distance_3d_50percentile', 'distance_3d_75percentile', 'distance_3d_max', 'distance_vertical_mean', 'distance_vertical_std', 'distance_vertical_min', 'distance_vertical_25percentile', 'distance_vertical_50percentile', 'distance_vertical_75percentile', 'distance_vertical_max', 'theta_mean', 'theta_std', 'theta_min', 'theta_25percentile', 'theta_50percentile', 'theta_75percentile', 'theta_max'],
+).assign(
+    WBT=lambda idf: idf[['WBT']].astype(np.int64).merge(api_mapping, how='left', left_on='WBT', right_on='API_ID')['API'],
+    NNS=lambda idf: idf[['NNS']].astype(np.int64).merge(api_mapping, how='left', left_on='NNS', right_on='API_ID')['API'],
+    sidenns_heel=lambda idf: idf['sidenns_heel'].pipe(side_np_to_str),
+    sidenns_toe=lambda idf: idf['sidenns_toe'].pipe(side_np_to_str),
+)
+
+assert stats_blanker.dtypes.equals(stats_results.dtypes)
 
 0
 
