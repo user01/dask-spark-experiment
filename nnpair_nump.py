@@ -820,7 +820,7 @@ def nnpairs_numpy(
     vector_results = process_vectors(vectors_np, api_mapping)
     stats_results = process_stats(stats_np, api_mapping)
 
-    return vector_results, stats_results
+    return stats_results, vector_results
 
 
 # read local data
