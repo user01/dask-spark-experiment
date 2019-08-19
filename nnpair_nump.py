@@ -488,6 +488,7 @@ def nnpairs(
 
         # Compute the common WBT values
         spi_value = spi_values[spi_values[:, 0] == wbts_api_id][0]
+        vector_cos_angle_lat_wbt = spi_value[10] # angle in degrees
         wellhead = spi_value[1:4]
         east = spi_value[4:7]
         north = spi_value[7:10]
@@ -537,7 +538,9 @@ def nnpairs(
             distance = vectors_nns[-1, 3] - vectors_nns[0, 3]
             stats[idx, 2] = distance
 
-            stats[idx, 3] = 0.0 # TODO: Azimuth delta
+            vector_cos_angle_lat_nns = spi_values[spi_values[:, 0] == nns_id][0, 10]
+            stats[idx, 3] = angle_diff(vector_cos_angle_lat_wbt, vector_cos_angle_lat_nns)
+            # TODO: Azimuth delta
 
             nns_heel_xyz = vectors[0, 7:10]
             nns_toe_xyz = vectors[-1, 7:10]
@@ -671,6 +674,25 @@ def interpolate_coords(coordinates, segment_length):
 # interpolate_coords(coordinates_np, segment_length=segment_length)
 # %timeit interpolate_coords(coordinates_np, segment_length=segment_length)
 # %timeit interpolate_coords(coordinates_np, segment_length=segment_length)
+
+# #############################################################
+
+
+def side_np_to_str(srs:pd.Series):
+    return np.where(srs.values < 1.5, "RIGHT", "LEFT")
+
+# https://stackoverflow.com/a/7869457
+# angle differences - in degrees
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
+def mod_flat(a, n):
+    return (a % n + n) % n
+
+
+@jit(nopython=True, fastmath=True, cache=True, parallel=False)
+def angle_diff(a, b):
+    """Compute the absolute degree angle difference between two directions"""
+    res = a - b
+    return np.abs(mod_flat((res + 180), 360) - 180)
 
 
 # #############################################################
