@@ -718,7 +718,7 @@ coordinates_np = (
     .values.astype(np.float64)
 )
 spi_values = spi_mapping[
-    ["API_ID", "X", "Y", "Z", "X_East", "Y_East", "Z_East", "X_North", "Y_North", "Z_North"]
+    ["API_ID", "X", "Y", "Z", "X_East", "Y_East", "Z_East", "X_North", "Y_North", "Z_North", 'Vector_Cos_Angle_Lat']
 ].values
 
 threshold = 914.0
