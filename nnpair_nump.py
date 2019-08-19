@@ -248,18 +248,18 @@ def closests_pt(p, a_s, b_s):
 
 
 @jit(nopython=True, fastmath=True, cache=True, parallel=False)
-def pick_points(sequence, points, api_ids, mds, threshold: float):
+def pick_points(sequence, points, wbt_id, api_ids, mds, threshold: float):
     """
     Given a WBT sequence, finds points within the planer masks and finds
     closest point on WBT
 
-    Returns api_id, distance (m), md (m), wbt_pt(xyz), nns_pt(xyz)
+    Returns wbt_id, api_id, distance (m), md (m), wbt_pt(xyz), nns_pt(xyz)
     """
     assert points.shape[0] == mds.shape[0]
     assert points.shape[1] == 3
     assert len(mds.shape) == 1
     mask_points_per_segment = generate_all_masks(sequence, pts_test=points)
-    results = np.ones((mask_points_per_segment.shape[0], 9)) * -1
+    results = np.ones((mask_points_per_segment.shape[0], 10)) * -1
     vs = sequence[:-1]
     ws = sequence[1:]
     for idx in range(mask_points_per_segment.shape[0]):
@@ -270,15 +270,16 @@ def pick_points(sequence, points, api_ids, mds, threshold: float):
         if distance <= threshold:
             results[idx] = np.array(
                 [
-                    api_ids[idx],  # 0
-                    distance,  # 1
-                    mds[idx],  # 2
-                    point[0],  # 3
-                    point[1],  # 4
-                    point[2],  # 5
-                    points[idx][0],  # 6
-                    points[idx][1],  # 7
-                    points[idx][2],  # 8
+                    wbt_id,          # 0
+                    api_ids[idx],    # 1
+                    distance,        # 2
+                    mds[idx],        # 3
+                    point[0],        # 4
+                    point[1],        # 5
+                    point[2],        # 6
+                    points[idx][0],  # 7
+                    points[idx][1],  # 8
+                    points[idx][2],  # 9
                 ]
             )
     return results[results[:, 0] > -1]
@@ -468,6 +469,7 @@ def nnpairs(
         points = points_all
 
         vectors = pick_points(
+            wbt_id=wbts_api_id,
             sequence=sequence,
             mds=mds,
             api_ids=api_ids,
@@ -476,6 +478,7 @@ def nnpairs(
         ).astype(
             np.float32
         )
+        assert vectors.shape[1] == 10, "Improper vector size"
 
         vectors_lst.append(vectors)
 
@@ -495,8 +498,8 @@ def nnpairs(
         local_up_len = np.linalg.norm(local_up)
         local_up_unit = local_up / local_up_len
 
-        wbt = vectors[:, 3:6]
-        nns = vectors[:, 6:9]
+        wbt = vectors[:, 4:7]
+        nns = vectors[:, 7:10]
         delta = nns - wbt
         distance_3d = np_linalg_norm(delta, axis=1)
         distance_3d_valid = distance_3d > 1e-9
@@ -521,21 +524,21 @@ def nnpairs(
         # # this will always be positive - dotting a vector with itself
         # # the correct side is the 'right' side. funny, right?
 
-        nns_ids = np.unique(vectors[:, 0])
+        nns_ids = np.unique(vectors[:, 1])
         stats = np.ones((nns_ids.shape[0], 32)) * -50
 
         for idx, nns_id in enumerate(nns_ids):
             stats[idx, 0] = wbts_api_id
             stats[idx, 1] = nns_id
-            mask_nns = vectors[:, 0] == nns_id
+            mask_nns = vectors[:, 1] == nns_id
             vectors_nns = vectors[mask_nns]
 
             # md diffs
-            distance = vectors_nns[-1, 2] - vectors_nns[0, 2]
+            distance = vectors_nns[-1, 3] - vectors_nns[0, 3]
             stats[idx, 2] = distance
 
-            nns_heel_xyz = vectors[0, 6:9]
-            nns_toe_xyz = vectors[-1, 6:9]
+            nns_heel_xyz = vectors[0, 7:10]
+            nns_toe_xyz = vectors[-1, 7:10]
             # the vector 'shadow' on the right facing normal is the distance from the
             # lateral plane, the plane that touches the heel, toe, and a position up
             # up being determined by the wellhead
