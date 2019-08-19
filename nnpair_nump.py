@@ -707,6 +707,14 @@ vectors_np, stats_np = nnpairs(
     segment_length=segment_length,
 )
 
+vector_results = pd.DataFrame(
+    vectors_np.astype(np.float64),
+    columns=['WBT', 'NNS', 'NNS_MD', 'Distance', 'WBT_X', 'WBT_Y', 'WBT_Z', 'NNS_X', 'NNS_Y', 'NNS_Z'],
+).assign(
+    WBT=lambda idf: idf[['WBT']].astype(np.int64).merge(api_mapping, how='left', left_on='WBT', right_on='API_ID')['API'],
+    NNS=lambda idf: idf[['NNS']].astype(np.int64).merge(api_mapping, how='left', left_on='NNS', right_on='API_ID')['API'],
+)
+assert vectors_blanker.dtypes.equals(vector_results.dtypes)
 
 0
 
