@@ -525,17 +525,19 @@ def nnpairs(
         # # the correct side is the 'right' side. funny, right?
 
         nns_ids = np.unique(vectors[:, 1])
-        stats = np.ones((nns_ids.shape[0], 32)) * -50
+        stats = np.ones((nns_ids.shape[0], 34)) * -50
 
         for idx, nns_id in enumerate(nns_ids):
-            stats[idx, 0] = wbts_api_id
-            stats[idx, 1] = nns_id
+            stats[idx, 0] = nns_id
+            stats[idx, 1] = wbts_api_id
             mask_nns = vectors[:, 1] == nns_id
             vectors_nns = vectors[mask_nns]
 
             # md diffs
             distance = vectors_nns[-1, 3] - vectors_nns[0, 3]
             stats[idx, 2] = distance
+
+            stats[idx, 3] = 0.0 # TODO: Azimuth delta
 
             nns_heel_xyz = vectors[0, 7:10]
             nns_toe_xyz = vectors[-1, 7:10]
@@ -546,28 +548,29 @@ def nnpairs(
             # 2.0 == left
             sidenns_heel = 1.0 if np.dot(lateral_normal, nns_heel_xyz) > 0 else 2.0
             sidenns_toe = 1.0 if np.dot(lateral_normal, nns_toe_xyz) > 0 else 2.0
-            stats[idx, 3] = sidenns_heel
-            stats[idx, 4] = sidenns_toe
+            stats[idx, 4] = sidenns_heel
+            stats[idx, 5] = sidenns_toe
 
+            PERCENTILES = [0, 25, 50, 75, 100]
             distance_2d_nns = distance_2d[mask_nns]
-            stats[idx, 5] = np.mean(distance_2d_nns)
-            stats[idx, 6:11] = np.percentile(distance_2d_nns, [0, 25, 50, 75, 100])
-            stats[idx, 11] = np.std(distance_2d_nns)
+            stats[idx, 6] = np.mean(distance_2d_nns)
+            stats[idx, 7] = np.std(distance_2d_nns)
+            stats[idx, 8:13] = np.percentile(distance_2d_nns, PERCENTILES)
 
             distance_3d_nns = distance_3d[mask_nns]
-            stats[idx, 12] = np.mean(distance_3d_nns)
-            stats[idx, 13:18] = np.percentile(distance_3d_nns, [0, 25, 50, 75, 100])
-            stats[idx, 18] = np.std(distance_3d_nns)
+            stats[idx, 13] = np.mean(distance_3d_nns)
+            stats[idx, 14] = np.std(distance_3d_nns)
+            stats[idx, 15:20] = np.percentile(distance_3d_nns, PERCENTILES)
 
             distance_vertical_nns = distance_vertical[mask_nns]
-            stats[idx, 19] = np.mean(distance_vertical_nns)
-            stats[idx, 20:25] = np.percentile(distance_vertical_nns, [0, 25, 50, 75, 100])
-            stats[idx, 25] = np.std(distance_vertical_nns)
+            stats[idx, 20] = np.mean(distance_vertical_nns)
+            stats[idx, 21] = np.std(distance_vertical_nns)
+            stats[idx, 22:27] = np.percentile(distance_vertical_nns, PERCENTILES)
 
             theta_nns = theta[mask_nns]
-            stats[idx, 26] = np.mean(theta_nns)
-            stats[idx, 26:31] = np.percentile(theta_nns, [0, 25, 50, 75, 100])
-            stats[idx, 31] = np.std(theta_nns)
+            stats[idx, 27] = np.mean(theta_nns)
+            stats[idx, 28] = np.std(theta_nns)
+            stats[idx, 29:34] = np.percentile(theta_nns, PERCENTILES)
 
         stats_lst.append(stats.astype(np.float32))
 
