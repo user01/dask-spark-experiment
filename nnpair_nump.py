@@ -698,6 +698,63 @@ def angle_diff(a, b):
 # #############################################################
 
 
+def blank_stats():
+    """A blank instance of the data set returned by the pairs operation"""
+    return pd.DataFrame({
+        "NNS": pd.Series([], dtype="object"),
+        "WBT": pd.Series([], dtype="object"),
+        "distance_segment": pd.Series([], dtype="float64"),
+        "azimuth_delta": pd.Series([], dtype="float64"),
+        "sidenns_heel": pd.Series([], dtype="object"),
+        "sidenns_toe": pd.Series([], dtype="object"),
+        "distance_2d_mean": pd.Series([], dtype="float64"),
+        "distance_2d_std": pd.Series([], dtype="float64"),
+        "distance_2d_min": pd.Series([], dtype="float64"),
+        "distance_2d_25percentile": pd.Series([], dtype="float64"),
+        "distance_2d_50percentile": pd.Series([], dtype="float64"),
+        "distance_2d_75percentile": pd.Series([], dtype="float64"),
+        "distance_2d_max": pd.Series([], dtype="float64"),
+        "distance_3d_mean": pd.Series([], dtype="float64"),
+        "distance_3d_std": pd.Series([], dtype="float64"),
+        "distance_3d_min": pd.Series([], dtype="float64"),
+        "distance_3d_25percentile": pd.Series([], dtype="float64"),
+        "distance_3d_50percentile": pd.Series([], dtype="float64"),
+        "distance_3d_75percentile": pd.Series([], dtype="float64"),
+        "distance_3d_max": pd.Series([], dtype="float64"),
+        "distance_vertical_mean": pd.Series([], dtype="float64"),
+        "distance_vertical_std": pd.Series([], dtype="float64"),
+        "distance_vertical_min": pd.Series([], dtype="float64"),
+        "distance_vertical_25percentile": pd.Series([], dtype="float64"),
+        "distance_vertical_50percentile": pd.Series([], dtype="float64"),
+        "distance_vertical_75percentile": pd.Series([], dtype="float64"),
+        "distance_vertical_max": pd.Series([], dtype="float64"),
+        "theta_mean": pd.Series([], dtype="float64"),
+        "theta_std": pd.Series([], dtype="float64"),
+        "theta_min": pd.Series([], dtype="float64"),
+        "theta_25percentile": pd.Series([], dtype="float64"),
+        "theta_50percentile": pd.Series([], dtype="float64"),
+        "theta_75percentile": pd.Series([], dtype="float64"),
+        "theta_max": pd.Series([], dtype="float64")
+    })
+
+def blank_vectors():
+    """A blank instance of the raw the pairs operation"""
+    return pd.DataFrame({
+        "WBT": pd.Series([], dtype="object"),
+        "NNS": pd.Series([], dtype="object"),
+        "NNS_MD": pd.Series([], dtype="float64"),
+        "Distance": pd.Series([], dtype="float64"),
+        "WBT_X": pd.Series([], dtype="float64"),
+        "WBT_Y": pd.Series([], dtype="float64"),
+        "WBT_Z": pd.Series([], dtype="float64"),
+        "NNS_X": pd.Series([], dtype="float64"),
+        "NNS_Y": pd.Series([], dtype="float64"),
+        "NNS_Z": pd.Series([], dtype="float64")
+    })
+
+# #############################################################
+
+
 # read local data
 apis = pd.read_parquet("apis.pq")
 coordinates = pd.read_parquet("coordinates.pq")
