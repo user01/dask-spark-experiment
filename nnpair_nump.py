@@ -754,66 +754,81 @@ def blank_vectors():
 
 # #############################################################
 
+def process_vectors(vectors_np:np.array, api_mapping:pd.DataFrame):
+    if vectors_np.shape[0] < 1:
+        return blank_vectors()
+
+    vector_results = pd.DataFrame(
+        vectors_np.astype(np.float64),
+        columns=['WBT', 'NNS', 'NNS_MD', 'Distance', 'WBT_X', 'WBT_Y', 'WBT_Z', 'NNS_X', 'NNS_Y', 'NNS_Z'],
+    ).assign(
+        WBT=lambda idf: idf[['WBT']].astype(np.int64).merge(api_mapping, how='left', left_on='WBT', right_on='API_ID')['API'],
+        NNS=lambda idf: idf[['NNS']].astype(np.int64).merge(api_mapping, how='left', left_on='NNS', right_on='API_ID')['API'],
+    )
+    return vector_results
+
+
+def process_stats(stats_np:np.array, api_mapping:pd.DataFrame):
+    if stats_np.shape[0] < 1:
+        return blank_stats()
+
+    stats_results = pd.DataFrame(
+        stats_np.astype(np.float64),
+        columns=['NNS', 'WBT', 'distance_segment', 'azimuth_delta', 'sidenns_heel', 'sidenns_toe', 'distance_2d_mean', 'distance_2d_std', 'distance_2d_min', 'distance_2d_25percentile', 'distance_2d_50percentile', 'distance_2d_75percentile', 'distance_2d_max', 'distance_3d_mean', 'distance_3d_std', 'distance_3d_min', 'distance_3d_25percentile', 'distance_3d_50percentile', 'distance_3d_75percentile', 'distance_3d_max', 'distance_vertical_mean', 'distance_vertical_std', 'distance_vertical_min', 'distance_vertical_25percentile', 'distance_vertical_50percentile', 'distance_vertical_75percentile', 'distance_vertical_max', 'theta_mean', 'theta_std', 'theta_min', 'theta_25percentile', 'theta_50percentile', 'theta_75percentile', 'theta_max'],
+    ).assign(
+        WBT=lambda idf: idf[['WBT']].astype(np.int64).merge(api_mapping, how='left', left_on='WBT', right_on='API_ID')['API'],
+        NNS=lambda idf: idf[['NNS']].astype(np.int64).merge(api_mapping, how='left', left_on='NNS', right_on='API_ID')['API'],
+        sidenns_heel=lambda idf: idf['sidenns_heel'].pipe(side_np_to_str),
+        sidenns_toe=lambda idf: idf['sidenns_toe'].pipe(side_np_to_str),
+    )
+    return stats_results
+
+
+def nnpairs_numpy(
+    coordinates:pd.DataFrame,
+    straight_perforation_interval:pd.DataFrame,
+    apis:pd.DataFrame,
+    radius_range:float=914.0, # meters
+    segment_length:float=15.0, # meters
+):
+    # pandas building
+    spi_mapping = straight_perforation_interval.reset_index().rename(columns={"index": "API_ID"})
+    api_mapping = spi_mapping[["API", "API_ID"]]
+
+    wbts_api_ids = apis.merge(api_mapping)["API_ID"].values.astype(np.float64)
+
+    # coordinates.merge(api_mapping).head(2)
+    coordinates_np = (
+        coordinates.merge(spi_mapping[["API_ID", "API", "PerfFrom", "PerfTo"]])
+        .pipe(lambda idf: idf[(idf["MD"] >= idf["PerfFrom"]) & (idf["MD"] <= idf["PerfTo"])])[
+            ["API_ID", "MD", "X", "Y", "Z"]
+        ]
+        .values.astype(np.float64)
+    )
+    spi_values = spi_mapping[
+        ["API_ID", "X", "Y", "Z", "X_East", "Y_East", "Z_East", "X_North", "Y_North", "Z_North", 'Vector_Cos_Angle_Lat']
+    ].values
+
+    vectors_np, stats_np = nnpairs(
+        wbts_api_ids,
+        coordinates_np,
+        spi_values,
+        threshold=radius_range,
+        segment_length=segment_length,
+    )
+
+    vector_results = process_vectors(vectors_np, api_mapping)
+    stats_results = process_stats(stats_np, api_mapping)
+
+    return vector_results, stats_results
+
 
 # read local data
 apis = pd.read_parquet("apis.pq")
 coordinates = pd.read_parquet("coordinates.pq")
 spi = pd.read_parquet("spi.pq")
 
-# pandas building
-spi_mapping = spi.reset_index().rename(columns={"index": "API_ID"})
-api_mapping = spi_mapping[["API", "API_ID"]]
-
-wbts_api_ids = apis.merge(api_mapping)["API_ID"].values.astype(np.float64)
-
-# coordinates.merge(api_mapping).head(2)
-coordinates_np = (
-    coordinates.merge(spi_mapping[["API_ID", "API", "PerfFrom", "PerfTo"]])
-    .pipe(lambda idf: idf[(idf["MD"] >= idf["PerfFrom"]) & (idf["MD"] <= idf["PerfTo"])])[
-        ["API_ID", "MD", "X", "Y", "Z"]
-    ]
-    .values.astype(np.float64)
-)
-spi_values = spi_mapping[
-    ["API_ID", "X", "Y", "Z", "X_East", "Y_East", "Z_East", "X_North", "Y_North", "Z_North", 'Vector_Cos_Angle_Lat']
-].values
-
-
-threshold = 914.0
-segment_length = 15.0
-
-vectors_np, stats_np = nnpairs(
-    wbts_api_ids,
-    coordinates_np,
-    spi_values,
-    threshold=threshold,
-    segment_length=segment_length,
-)
-
-vectors_blanker = blank_vectors()
-stats_blanker = blank_stats()
-
-vector_results = pd.DataFrame(
-    vectors_np.astype(np.float64),
-    columns=['WBT', 'NNS', 'NNS_MD', 'Distance', 'WBT_X', 'WBT_Y', 'WBT_Z', 'NNS_X', 'NNS_Y', 'NNS_Z'],
-).assign(
-    WBT=lambda idf: idf[['WBT']].astype(np.int64).merge(api_mapping, how='left', left_on='WBT', right_on='API_ID')['API'],
-    NNS=lambda idf: idf[['NNS']].astype(np.int64).merge(api_mapping, how='left', left_on='NNS', right_on='API_ID')['API'],
-)
-assert vectors_blanker.dtypes.equals(vector_results.dtypes)
-
-
-stats_results = pd.DataFrame(
-    stats_np.astype(np.float64),
-    columns=['NNS', 'WBT', 'distance_segment', 'azimuth_delta', 'sidenns_heel', 'sidenns_toe', 'distance_2d_mean', 'distance_2d_std', 'distance_2d_min', 'distance_2d_25percentile', 'distance_2d_50percentile', 'distance_2d_75percentile', 'distance_2d_max', 'distance_3d_mean', 'distance_3d_std', 'distance_3d_min', 'distance_3d_25percentile', 'distance_3d_50percentile', 'distance_3d_75percentile', 'distance_3d_max', 'distance_vertical_mean', 'distance_vertical_std', 'distance_vertical_min', 'distance_vertical_25percentile', 'distance_vertical_50percentile', 'distance_vertical_75percentile', 'distance_vertical_max', 'theta_mean', 'theta_std', 'theta_min', 'theta_25percentile', 'theta_50percentile', 'theta_75percentile', 'theta_max'],
-).assign(
-    WBT=lambda idf: idf[['WBT']].astype(np.int64).merge(api_mapping, how='left', left_on='WBT', right_on='API_ID')['API'],
-    NNS=lambda idf: idf[['NNS']].astype(np.int64).merge(api_mapping, how='left', left_on='NNS', right_on='API_ID')['API'],
-    sidenns_heel=lambda idf: idf['sidenns_heel'].pipe(side_np_to_str),
-    sidenns_toe=lambda idf: idf['sidenns_toe'].pipe(side_np_to_str),
-)
-
-assert stats_blanker.dtypes.equals(stats_results.dtypes)
+res = nnpairs_numpy(coordinates=coordinates, straight_perforation_interval=spi, apis=apis)
 
 0
 
